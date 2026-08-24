@@ -212,3 +212,35 @@ ChatGPT's GitHub review found one medium contract mismatch: the official A-share
 `StockSnapshots.timestamp` now accepts `number | null`. The data function accepts null or a finite number while still rejecting undefined, strings, `NaN`, and infinity. When the timestamp is null, the industry page keeps all real constituent data visible and labels the stock time as “接口未提供（显式代码模式）”; it does not substitute the current time, index time, or constituent time.
 
 Repair verification covered both valid branches and invalid values. The current live API still returned a finite timestamp and the page displayed its real Asia/Shanghai time. A temporary null injection kept all three real constituents and breadth data visible while showing the explicit unavailable label. Temporary `NaN`, string, and undefined injections each produced `INVALID_STOCK_SNAPSHOTS`. Every injection was removed before the final build and commit.
+
+## 2026-08-24 — Task 4 repair review and Task 5
+
+### Task 4 repair review
+
+ChatGPT compared `a607404..35177fe` from GitHub and formally passed Task 4. The repair commit changed only the three requested files, matched the official nullable timestamp contract, preserved truthful time semantics, and introduced no new issue.
+
+### Task 5 scope
+
+Task 5 closes the first Market → Industry → Stock business loop with a basic A-share latest-snapshot detail page. It adds no historical prices, candlesticks, moving averages, valuations, financials, database, client-side fetching, API route, formatter refactor, or dependency. Stock identity comes from an exact A-share meta-search match rather than from the referring industry page or a guessed exchange suffix.
+
+### Task 5 API preflight
+
+- Meta request: `GET /api/meta/tickers/search?q=300313.SZ&asset_type=a-share&limit=10`.
+- Business response `code=0`; one candidate and one exact `thscode + asset_type` match: 天山生物 (`300313.SZ`, `a-share`).
+- Snapshot request: `GET /api/a-share/prices/snapshot?thscodes=300313.SZ`.
+- Business response `code=0`; exactly one item for `300313.SZ`.
+- Pre-implementation fields: last `15.36`, change `+2.56`, percentage `+20%`, open `13.37`, high `15.36`, low `12.19`, previous close `12.80`, volume `46,366,631`, turnover `639,508,500`.
+- The live snapshot returned a finite timestamp; the page also supports the documented null branch without substituting another time.
+
+### Task 5 verification
+
+- `npm run build`: passed; `/stock/[thscode]` is a dynamic Server Component route.
+- Browser navigation passed from `/` to `/industry/884277.TI` to `/stock/300313.SZ`; only the stock name is linked.
+- Page identity came from the exact meta result and matched 天山生物 (`300313.SZ`). All nine displayed snapshot fields matched the same preflight response, with only two-decimal and unit formatting differences.
+- The finite timestamp displayed the real Asia/Shanghai time. A temporary null timestamp kept all stock facts visible and displayed “接口未提供（显式代码模式）”; the test change was restored.
+- `/stock/000300.SH` and `/stock/XXXXXX.SZ` both produced `STOCK_NOT_FOUND`.
+- Temporarily removing the exact snapshot produced `STOCK_SNAPSHOT_INCOMPLETE`; the test change was restored.
+- Temporarily setting `open_price` to `NaN` produced `INVALID_STOCK_DETAIL_SNAPSHOT`; the test change was restored.
+- At 390 × 844, document and body widths stayed within the viewport, the name and price remained readable, and all six fact cards were present without a table or horizontal scrolling.
+- The production server listened on `0.0.0.0:8030`. <https://invest0830.okbbc.com/stock/300313.SZ> returned HTTP 200 with the real name, code, price, and volume label.
+- Served public HTML contained neither `X-api-key` nor the upstream host. No mock fallback or dependency was added; `package.json` and `package-lock.json` remained unchanged.

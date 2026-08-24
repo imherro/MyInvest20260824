@@ -181,7 +181,9 @@ export default async function IndustryDetail({
                 {stocks.map(({ thscode: stockCode, name, snapshot }) => (
                   <tr key={stockCode}>
                     <td className="stock-name">
-                      <strong>{name}</strong>
+                      <Link className="stock-link" href={`/stock/${stockCode}`}>
+                        {name}
+                      </Link>
                       <span className="label">{stockCode}</span>
                     </td>
                     <td>{formatNumber(snapshot.last_price)}</td>

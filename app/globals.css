@@ -292,11 +292,66 @@ h1 {
 }
 
 .stock-name strong,
+.stock-name a,
 .stock-name span {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.stock-link {
+  color: inherit;
+  font-weight: 700;
+  text-decoration-color: #aab3be;
+  text-underline-offset: 3px;
+}
+
+.stock-link:hover {
+  color: #315d96;
+}
+
+.stock-price-summary {
+  display: grid;
+  gap: 5px;
+  text-align: right;
+}
+
+.stock-price-summary > strong {
+  font-size: 2.2rem;
+  letter-spacing: -0.03em;
+}
+
+.stock-price-summary div {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  font-weight: 650;
+}
+
+.stock-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.stock-fact {
+  display: grid;
+  gap: 7px;
+  padding: 20px;
+  border: 1px solid #dce2e8;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.stock-fact strong {
+  font-size: 1.1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.stock-scope-note {
+  margin-top: 14px;
 }
 
 .scope-note {
@@ -351,6 +406,22 @@ footer {
 
   .detail-index {
     text-align: left;
+  }
+
+  .stock-price-summary {
+    text-align: left;
+  }
+
+  .stock-price-summary div {
+    justify-content: flex-start;
+  }
+
+  .stock-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stock-fact {
+    padding: 16px;
   }
 
   .breadth-grid {

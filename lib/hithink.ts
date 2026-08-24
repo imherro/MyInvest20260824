@@ -55,13 +55,29 @@ export type IndexConstituents = {
 export type StockSnapshot = {
   thscode: string;
   last_price: number;
+  price_change: number;
   price_change_ratio_pct: number;
+  open_price: number;
+  high_price: number;
+  low_price: number;
+  prev_price: number;
+  volume: number;
   turnover: number;
 };
 
 export type StockSnapshots = {
   timestamp: number | null;
   item: StockSnapshot[];
+};
+
+export type AShareTicker = {
+  thscode: string;
+  name: string;
+  asset_type: string;
+};
+
+type TickerSearch = {
+  item: AShareTicker[];
 };
 
 export class HithinkError extends Error {
@@ -255,4 +271,39 @@ export async function getStockSnapshots(
   }
 
   return snapshots;
+}
+
+export async function getAshareTicker(
+  thscode: string,
+): Promise<AShareTicker | null> {
+  const params = new URLSearchParams({
+    q: thscode,
+    asset_type: "a-share",
+    limit: "10",
+  });
+  const search = await hithinkFetch<TickerSearch>(
+    `/api/meta/tickers/search?${params}`,
+  );
+
+  if (
+    !Array.isArray(search.item) ||
+    !search.item.every(
+      (item) =>
+        typeof item.thscode === "string" &&
+        item.thscode.trim() !== "" &&
+        typeof item.name === "string" &&
+        item.name.trim() !== "" &&
+        typeof item.asset_type === "string" &&
+        item.asset_type.trim() !== "",
+    )
+  ) {
+    throw new HithinkError("股票身份检索响应格式不正确。", "INVALID_TICKER_SEARCH");
+  }
+
+  return (
+    search.item.find(
+      (item) =>
+        item.thscode === thscode && item.asset_type === "a-share",
+    ) ?? null
+  );
 }
