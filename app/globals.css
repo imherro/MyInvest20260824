@@ -1,0 +1,80 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #f4f6f8;
+  color: #18202b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  width: min(680px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 72px 0 40px;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  letter-spacing: -0.06em;
+}
+
+.subtitle {
+  margin: 10px 0 40px;
+  color: #596575;
+  font-size: 1.1rem;
+}
+
+.panel {
+  display: grid;
+  gap: 22px;
+  padding: 28px;
+  border: 1px solid #dce2e8;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 16px 42px rgb(24 32 43 / 8%);
+}
+
+.fact {
+  display: grid;
+  gap: 5px;
+}
+
+.label {
+  color: #6b7685;
+  font-size: 0.82rem;
+}
+
+.value {
+  font-size: 1.15rem;
+  font-weight: 650;
+}
+
+.error {
+  border-color: #efc8c8;
+  background: #fffafa;
+}
+
+.error-title {
+  margin: 0;
+  color: #a12626;
+  font-size: 1.25rem;
+}
+
+.error-details {
+  margin: 0;
+  color: #6f3030;
+  line-height: 1.65;
+}
+
+footer {
+  margin-top: 22px;
+  color: #727e8d;
+  font-size: 0.8rem;
+}
