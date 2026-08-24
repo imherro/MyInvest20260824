@@ -1,6 +1,15 @@
-import { getTradingDays, HithinkError } from "../lib/hithink";
+import {
+  getIndexSnapshots,
+  getTradingDays,
+  HithinkError,
+} from "../lib/hithink";
 
 export const dynamic = "force-dynamic";
+
+const MAJOR_INDICES = [
+  { thscode: "000001.SH", name: "上证指数" },
+  { thscode: "000300.SH", name: "沪深300" },
+] as const;
 
 function formatTradingDate(value: string): string {
   if (!/^\d{8}$/.test(value)) {
@@ -23,14 +32,50 @@ function formatShanghaiTime(timestamp: number): string {
   }).format(new Date(timestamp));
 }
 
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat("zh-CN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function formatChange(value: number, suffix = ""): string {
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${formatNumber(value)}${suffix}`;
+}
+
+function changeClass(value: number): string {
+  if (value > 0) return "positive";
+  if (value < 0) return "negative";
+  return "neutral";
+}
+
 export default async function Home() {
   try {
-    const calendar = await getTradingDays();
+    const [calendar, indexSnapshots] = await Promise.all([
+      getTradingDays(),
+      getIndexSnapshots(MAJOR_INDICES.map((index) => index.thscode)),
+    ]);
     const latestTradingDay = calendar.item.at(-1);
 
     if (!latestTradingDay) {
       throw new HithinkError("当前条件暂无交易日数据。", "EMPTY_CALENDAR");
     }
+
+    const indices = MAJOR_INDICES.map((index) => {
+      const snapshot = indexSnapshots.item.find(
+        (item) => item.thscode === index.thscode,
+      );
+
+      if (!snapshot) {
+        throw new HithinkError(
+          `指数快照缺少 ${index.name}（${index.thscode}）。`,
+          "INDEX_SNAPSHOT_INCOMPLETE",
+        );
+      }
+
+      return { ...index, snapshot };
+    });
 
     return (
       <main>
@@ -46,8 +91,35 @@ export default async function Home() {
             <span className="value">{formatTradingDate(latestTradingDay.date)}</span>
           </div>
           <div className="fact">
-            <span className="label">数据更新时间（Asia/Shanghai）</span>
+            <span className="label">交易日历更新时间（Asia/Shanghai）</span>
             <span className="value">{formatShanghaiTime(calendar.timestamp)}</span>
+          </div>
+        </section>
+        <section className="market-section" aria-labelledby="major-indices-title">
+          <div className="section-heading">
+            <h2 id="major-indices-title">主要指数 · 最新快照</h2>
+            <span className="label">
+              指数行情时间 {formatShanghaiTime(indexSnapshots.timestamp)}
+            </span>
+          </div>
+          <div className="indices">
+            {indices.map(({ name, thscode, snapshot }) => (
+              <article className="index-card" key={thscode}>
+                <div>
+                  <h3>{name}</h3>
+                  <span className="label">{thscode}</span>
+                </div>
+                <strong className="index-price">
+                  {formatNumber(snapshot.last_price)}
+                </strong>
+                <div className={`change ${changeClass(snapshot.price_change)}`}>
+                  <span>{formatChange(snapshot.price_change)}</span>
+                  <span>
+                    {formatChange(snapshot.price_change_ratio_pct, "%")}
+                  </span>
+                </div>
+              </article>
+            ))}
           </div>
         </section>
         <footer>数据仅供个人研究，不构成投资建议。</footer>

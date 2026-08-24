@@ -19,6 +19,18 @@ export type TradingCalendar = {
   item: TradingDay[];
 };
 
+export type IndexSnapshot = {
+  thscode: string;
+  last_price: number;
+  price_change: number;
+  price_change_ratio_pct: number;
+};
+
+export type IndexSnapshots = {
+  timestamp: number;
+  item: IndexSnapshot[];
+};
+
 export class HithinkError extends Error {
   constructor(
     message: string,
@@ -81,7 +93,7 @@ export async function hithinkFetch<T>(path: string): Promise<T> {
     );
   }
 
-  if (envelope.data === null) {
+  if (envelope.data == null) {
     throw new HithinkError("同花顺金融数据服务未返回数据。", "EMPTY_DATA");
   }
 
@@ -98,4 +110,21 @@ export async function getTradingDays(): Promise<TradingCalendar> {
   }
 
   return calendar;
+}
+
+export async function getIndexSnapshots(
+  thscodes: readonly string[],
+): Promise<IndexSnapshots> {
+  const params = new URLSearchParams({
+    thscodes: thscodes.join(","),
+  });
+  const snapshots = await hithinkFetch<IndexSnapshots>(
+    `/api/a-share-index/prices/snapshot?${params}`,
+  );
+
+  if (!Number.isFinite(snapshots.timestamp) || !Array.isArray(snapshots.item)) {
+    throw new HithinkError("指数快照响应格式不正确。", "INVALID_INDEX_SNAPSHOTS");
+  }
+
+  return snapshots;
 }

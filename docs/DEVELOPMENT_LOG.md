@@ -88,3 +88,36 @@ API keys remain in local `.env` and must not enter Git, browser output, logs, or
 ### GitHub decision
 
 The repository is public at <https://github.com/imherro/MyInvest20260824> so ChatGPT can review it without depending on private-repository authorization. This differs from the initial private-repository suggestion; the user explicitly chose public visibility. Secret scanning remains a required pre-push check.
+
+## 2026-08-24 — Task 1 review and Task 2
+
+### Task 1 review
+
+ChatGPT inspected commit `673c1b4` and the complete Git tree from GitHub. Task 1 passed without blocking changes. The only low-priority observation was that `envelope.data === null` did not cover a schema-violating `undefined`; Task 2 changes it to `envelope.data == null` without adding a validation layer.
+
+### Task 2 decision
+
+The homepage adds only two major-index latest snapshots: 上证指数 (`000001.SH`) and 沪深300 (`000300.SH`). Industry data, charts, historical prices, auto-refresh, client components, internal API routes, databases, and new dependencies remain out of scope.
+
+### Endpoint and live contract check
+
+- Endpoint: `GET /api/a-share-index/prices/snapshot?thscodes=000001.SH,000300.SH`.
+- Live business response: `code=0`, `item` count 2.
+- Both requested `thscode` values were returned without substitution.
+- The live response exposed `data.timestamp`, `data.total`, and item fields `thscode`, `ticker`, `last_price`, `price_change`, `price_change_ratio_pct`, `open_price`, `high_price`, `low_price`, `prev_price`, `volume`, and `turnover`.
+- Task 2 consumes only `timestamp`, `thscode`, `last_price`, `price_change`, and `price_change_ratio_pct`.
+- The index snapshot returned a finite millisecond `timestamp`; this was verified from the live endpoint before implementation.
+
+### Task 2 verification
+
+- `npm run build`: passed.
+- Live page check: 上证指数 `3,882.01`, `-23.19`, `-0.59%`; 沪深300 `4,563.13`, `-55.77`, `-1.21%`.
+- Every displayed price, change, and percentage matched the live API response; only thousands separators and two-decimal formatting differed.
+- The page used the index snapshot's own timestamp and labeled it “指数行情时间”; the calendar timestamp remains separately labeled.
+- A temporary nonexistent `thscode` produced an explicit upstream error (`code=1002`) and the unified error UI, with no `0`, `--`, `undefined`, `NaN`, or mock fallback. The valid code was restored before commit.
+- Served HTML contained neither the upstream host nor the API header name, confirming that the browser did not call Hithink directly.
+- Task 2 changed only `lib/hithink.ts`, `app/page.tsx`, `app/globals.css`, and this append-only log. It added no dependency.
+
+### Task 2 conclusion
+
+Task 2 passed local acceptance. The homepage now answers the first real market question—how the Shanghai Composite and CSI 300 latest snapshots are performing—without expanding into industry data or charts.
