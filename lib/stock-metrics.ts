@@ -35,3 +35,16 @@ export function calculatePeriodReturn(
 
   return values.at(-1)! / values[values.length - periods - 1] - 1;
 }
+
+export function calculateLatestToPreviousAverage(
+  values: readonly number[],
+  window: number,
+): number | null {
+  if (values.length <= window) return null;
+
+  const previous = values.slice(-window - 1, -1);
+  const average = calculateAverage(previous);
+  if (average === 0) return null;
+
+  return values.at(-1)! / average;
+}

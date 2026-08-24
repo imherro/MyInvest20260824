@@ -7,7 +7,10 @@ import {
   getStockSnapshots,
   HithinkError,
 } from "../lib/hithink";
-import { calculatePeriodReturn } from "../lib/stock-metrics";
+import {
+  calculateLatestToPreviousAverage,
+  calculatePeriodReturn,
+} from "../lib/stock-metrics";
 import { readWatchlist, type WatchlistEntry } from "../lib/watchlist";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +29,7 @@ type WatchlistRow = WatchlistEntry & {
 type FocusRow = WatchlistRow & {
   period5: number | null;
   period20: number | null;
+  turnoverRatio: number | null;
   historyAvailable: boolean;
 };
 
@@ -190,15 +194,24 @@ export default async function Home() {
     const focusRows: FocusRow[] = focusCandidates.map((row, index) => {
       const result = focusHistoryResults[index];
       if (!result || result.status === "rejected") {
-        return { ...row, period5: null, period20: null, historyAvailable: false };
+        return {
+          ...row,
+          period5: null,
+          period20: null,
+          turnoverRatio: null,
+          historyAvailable: false,
+        };
       }
-      const closes = [...result.value.item]
-        .sort((a, b) => a.date_ms - b.date_ms)
-        .map((bar) => bar.close_price);
+      const sortedBars = [...result.value.item].sort(
+        (a, b) => a.date_ms - b.date_ms,
+      );
+      const closes = sortedBars.map((bar) => bar.close_price);
+      const turnovers = sortedBars.map((bar) => bar.turnover);
       return {
         ...row,
         period5: calculatePeriodReturn(closes, 5),
         period20: calculatePeriodReturn(closes, 20),
+        turnoverRatio: calculateLatestToPreviousAverage(turnovers, 20),
         historyAvailable: true,
       };
     });
@@ -226,11 +239,11 @@ export default async function Home() {
           </div>
           <div className="focus-table-wrapper">
             <table className="focus-table">
-              <thead><tr><th scope="col">标的</th><th scope="col">今日</th><th scope="col">5日</th><th scope="col">20日</th></tr></thead>
-              <tbody>{focusRows.map((row) => <tr key={row.code}><td className="focus-name"><FocusName row={row} /><span className="label">{row.code} · {assetLabel(row)}</span></td><td className={changeClass(row.changePct!)}>{formatChange(row.changePct!)}</td><td className={row.historyAvailable && row.period5 !== null ? changeClass(row.period5) : "neutral"}>{row.historyAvailable ? row.period5 === null ? "数据不足" : formatChange(row.period5 * 100) : "历史暂不可用"}</td><td className={row.historyAvailable && row.period20 !== null ? changeClass(row.period20) : "neutral"}>{row.historyAvailable ? row.period20 === null ? "数据不足" : formatChange(row.period20 * 100) : "历史暂不可用"}</td></tr>)}</tbody>
+              <thead><tr><th scope="col">标的</th><th scope="col">今日</th><th scope="col">5日</th><th scope="col">20日</th><th scope="col" className="focus-turnover-header">成交额比</th></tr></thead>
+              <tbody>{focusRows.map((row) => <tr key={row.code}><td className="focus-name"><FocusName row={row} /><span className="label">{row.code} · {assetLabel(row)}</span></td><td className={changeClass(row.changePct!)}>{formatChange(row.changePct!)}</td><td className={row.historyAvailable && row.period5 !== null ? changeClass(row.period5) : "neutral"}>{row.historyAvailable ? row.period5 === null ? "数据不足" : formatChange(row.period5 * 100) : "历史暂不可用"}</td><td className={row.historyAvailable && row.period20 !== null ? changeClass(row.period20) : "neutral"}>{row.historyAvailable ? row.period20 === null ? "数据不足" : formatChange(row.period20 * 100) : "历史暂不可用"}</td><td className="focus-turnover-ratio">{row.historyAvailable ? row.turnoverRatio === null ? "数据不足" : `${formatNumber(row.turnoverRatio)}×` : "历史暂不可用"}</td></tr>)}</tbody>
             </table>
           </div>
-          <p className="scope-note">按今日绝对涨跌幅选取前5个有行情标的；A股多日涨跌按前复权收盘价计算，ETF按交易所日线收盘价计算。</p>
+          <p className="scope-note">按今日绝对涨跌幅选取前5个有行情标的；A股多日涨跌按前复权收盘价计算，ETF按交易所日线收盘价计算。成交额比 = 最近历史交易日成交额 ÷ 此前20个交易日平均成交额；这是历史日线比较，不代表盘中实时量比。</p>
         </section>
         <section className="market-section" aria-labelledby="watchlist-title">
           <div className="section-heading">

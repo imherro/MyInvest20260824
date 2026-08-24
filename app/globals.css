@@ -91,8 +91,12 @@ main {
 
 .focus-table th:first-child,
 .focus-table td:first-child {
-  width: 40%;
+  width: 36%;
   text-align: left;
+}
+
+.focus-turnover-ratio {
+  white-space: nowrap;
 }
 
 .focus-table tbody tr:last-child td {
@@ -590,13 +594,22 @@ footer {
 
   .focus-table th,
   .focus-table td {
-    padding: 11px 5px;
-    font-size: 0.72rem;
+    padding: 11px 3px;
+    font-size: 0.68rem;
   }
 
   .focus-table th:first-child,
   .focus-table td:first-child {
-    width: 40%;
+    width: 36%;
+  }
+
+  .focus-table .focus-turnover-header {
+    font-size: 0;
+  }
+
+  .focus-table .focus-turnover-header::after {
+    content: "额比";
+    font-size: 0.68rem;
   }
 
   .watchlist-table th:first-child,
