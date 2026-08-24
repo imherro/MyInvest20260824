@@ -10,6 +10,7 @@ import {
 import {
   calculateLatestToPreviousAverage,
   calculatePeriodReturn,
+  calculateRangePosition,
 } from "../lib/stock-metrics";
 import { readWatchlist, type WatchlistEntry } from "../lib/watchlist";
 
@@ -30,6 +31,7 @@ type FocusRow = WatchlistRow & {
   period5: number | null;
   period20: number | null;
   turnoverRatio: number | null;
+  rangePosition20: number | null;
   historyAvailable: boolean;
 };
 
@@ -44,6 +46,10 @@ function formatNumber(value: number): string {
 
 function formatChange(value: number): string {
   return `${value > 0 ? "+" : ""}${formatNumber(value)}%`;
+}
+
+function formatPosition(value: number): string {
+  return `${Math.round(value * 100)}%`;
 }
 
 function formatShanghaiTime(timestamp: number): string {
@@ -88,11 +94,17 @@ function errorCode(error: unknown): string | undefined {
   return error instanceof HithinkError ? error.code : "UNKNOWN_ERROR";
 }
 
-function FocusName({ row }: { row: WatchlistRow }) {
+function FocusName({ row }: { row: FocusRow }) {
+  const mobilePosition = row.historyAvailable
+    ? row.rangePosition20 === null
+      ? "数据不足"
+      : formatPosition(row.rangePosition20)
+    : "历史暂不可用";
+
   if (row.market === "CN" && row.assetType === "a-share") {
-    return <Link className="stock-link" href={`/stock/${row.code}`}>{row.name}</Link>;
+    return <><Link className="stock-link" href={`/stock/${row.code}`}>{row.name}</Link><span className="focus-mobile-position">20日位置 {mobilePosition}</span></>;
   }
-  return <Link className="stock-link" href={`/etf/${row.code}`}>{row.name}</Link>;
+  return <><Link className="stock-link" href={`/etf/${row.code}`}>{row.name}</Link><span className="focus-mobile-position">20日位置 {mobilePosition}</span></>;
 }
 
 export default async function Home() {
@@ -199,6 +211,7 @@ export default async function Home() {
           period5: null,
           period20: null,
           turnoverRatio: null,
+          rangePosition20: null,
           historyAvailable: false,
         };
       }
@@ -212,6 +225,7 @@ export default async function Home() {
         period5: calculatePeriodReturn(closes, 5),
         period20: calculatePeriodReturn(closes, 20),
         turnoverRatio: calculateLatestToPreviousAverage(turnovers, 20),
+        rangePosition20: calculateRangePosition(closes, 20),
         historyAvailable: true,
       };
     });
@@ -239,8 +253,8 @@ export default async function Home() {
           </div>
           <div className="focus-table-wrapper">
             <table className="focus-table">
-              <thead><tr><th scope="col">标的</th><th scope="col">今日</th><th scope="col">5日</th><th scope="col">20日</th><th scope="col" className="focus-turnover-header">成交额比</th></tr></thead>
-              <tbody>{focusRows.map((row) => <tr key={row.code}><td className="focus-name"><FocusName row={row} /><span className="label">{row.code} · {assetLabel(row)}</span></td><td className={changeClass(row.changePct!)}>{formatChange(row.changePct!)}</td><td className={row.historyAvailable && row.period5 !== null ? changeClass(row.period5) : "neutral"}>{row.historyAvailable ? row.period5 === null ? "数据不足" : formatChange(row.period5 * 100) : "历史暂不可用"}</td><td className={row.historyAvailable && row.period20 !== null ? changeClass(row.period20) : "neutral"}>{row.historyAvailable ? row.period20 === null ? "数据不足" : formatChange(row.period20 * 100) : "历史暂不可用"}</td><td className="focus-turnover-ratio">{row.historyAvailable ? row.turnoverRatio === null ? "数据不足" : `${formatNumber(row.turnoverRatio)}×` : "历史暂不可用"}</td></tr>)}</tbody>
+              <thead><tr><th scope="col">标的</th><th scope="col">今日</th><th scope="col">5日</th><th scope="col">20日</th><th scope="col" className="focus-turnover-header">成交额比</th><th scope="col" className="focus-range-position">20日位置</th></tr></thead>
+              <tbody>{focusRows.map((row) => <tr key={row.code}><td className="focus-name"><FocusName row={row} /><span className="label">{row.code} · {assetLabel(row)}</span></td><td className={changeClass(row.changePct!)}>{formatChange(row.changePct!)}</td><td className={row.historyAvailable && row.period5 !== null ? changeClass(row.period5) : "neutral"}>{row.historyAvailable ? row.period5 === null ? "数据不足" : formatChange(row.period5 * 100) : "历史暂不可用"}</td><td className={row.historyAvailable && row.period20 !== null ? changeClass(row.period20) : "neutral"}>{row.historyAvailable ? row.period20 === null ? "数据不足" : formatChange(row.period20 * 100) : "历史暂不可用"}</td><td className="focus-turnover-ratio">{row.historyAvailable ? row.turnoverRatio === null ? "数据不足" : `${formatNumber(row.turnoverRatio)}×` : "历史暂不可用"}</td><td className="focus-range-position">{row.historyAvailable ? row.rangePosition20 === null ? "数据不足" : formatPosition(row.rangePosition20) : "历史暂不可用"}</td></tr>)}</tbody>
             </table>
           </div>
           <p className="scope-note">按今日绝对涨跌幅选取前5个有行情标的；A股多日涨跌按前复权收盘价计算，ETF按交易所日线收盘价计算。成交额比 = 最近历史交易日成交额 ÷ 此前20个交易日平均成交额；这是历史日线比较，不代表盘中实时量比。</p>

@@ -48,3 +48,17 @@ export function calculateLatestToPreviousAverage(
 
   return values.at(-1)! / average;
 }
+
+export function calculateRangePosition(
+  values: readonly number[],
+  window: number,
+): number | null {
+  if (values.length < window) return null;
+
+  const recent = values.slice(-window);
+  const minimum = Math.min(...recent);
+  const maximum = Math.max(...recent);
+  if (maximum === minimum) return null;
+
+  return (recent.at(-1)! - minimum) / (maximum - minimum);
+}

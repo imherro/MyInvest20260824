@@ -115,6 +115,10 @@ main {
   white-space: nowrap;
 }
 
+.focus-mobile-position {
+  display: none !important;
+}
+
 .watchlist-table {
   width: 100%;
   border-collapse: collapse;
@@ -610,6 +614,16 @@ footer {
   .focus-table .focus-turnover-header::after {
     content: "额比";
     font-size: 0.68rem;
+  }
+
+  .focus-table .focus-range-position {
+    display: none;
+  }
+
+  .focus-name .focus-mobile-position {
+    display: block !important;
+    color: #6b7685;
+    font-size: 0.62rem;
   }
 
   .watchlist-table th:first-child,
