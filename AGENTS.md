@@ -10,4 +10,4 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Project collaboration rules
 
-Read and follow `ChatGPTRuls.md` before working on this project.
+Read and follow `ChatGPTRules.md` before working on this project.
