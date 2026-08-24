@@ -1,5 +1,19 @@
 # Development Log
 
+## 2026-08-24 — V2 Final Review / Freeze
+
+### Freeze commit
+
+- Base: `e8ba82715c0ef6a625f56e35dfccfe6f4210337b`
+- Frozen V2 dashboard: self-selected latest snapshots → top-five daily focus → 5D/20D returns → turnover ratio → 20-day range position → 20-day sparkline → snapshot time/history cutoff → A-share/ETF research details.
+
+### Final regression
+
+- `npm test` passed all 12 tests; `npm run build` passed.
+- Local and public `/`, `/market`, `/industry/884277.TI`, `/stock/600350.SH`, and `/etf/510500.SH` returned HTTP 200 where applicable.
+- Public HTML for `/`, `/market`, `/stock/600350.SH`, and `/etf/510500.SH` contained no API key, `X-api-key`, or `fuyao.aicubes.cn`.
+- V2 is frozen: no additional homepage indicators, API requests, or product features are added in this closeout.
+
 ## 2026-08-24 — V2 Task 8 重点关注快照时间
 
 ### Decision
