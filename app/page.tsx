@@ -1,10 +1,13 @@
 import Link from "next/link";
 
 import {
+  getForwardAdjustedDailyHistory,
+  getFundDailyHistory,
   getFundMarketSnapshot,
   getStockSnapshots,
   HithinkError,
 } from "../lib/hithink";
+import { calculatePeriodReturn } from "../lib/stock-metrics";
 import { readWatchlist, type WatchlistEntry } from "../lib/watchlist";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +22,14 @@ type WatchlistRow = WatchlistEntry & {
   timestamp?: number | null;
   errorCode?: string;
 };
+
+type FocusRow = WatchlistRow & {
+  period5: number | null;
+  period20: number | null;
+  historyAvailable: boolean;
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 function formatNumber(value: number): string {
   return new Intl.NumberFormat("zh-CN", {
@@ -71,6 +82,13 @@ function assetLabel(entry: WatchlistEntry): string {
 
 function errorCode(error: unknown): string | undefined {
   return error instanceof HithinkError ? error.code : "UNKNOWN_ERROR";
+}
+
+function FocusName({ row }: { row: WatchlistRow }) {
+  if (row.market === "CN" && row.assetType === "a-share") {
+    return <Link className="stock-link" href={`/stock/${row.code}`}>{row.name}</Link>;
+  }
+  return <Link className="stock-link" href={`/etf/${row.code}`}>{row.name}</Link>;
 }
 
 export default async function Home() {
@@ -157,6 +175,33 @@ export default async function Home() {
     const available = rows.filter((row) => row.status === "ok");
     const rising = available.filter((row) => row.changePct! > 0).length;
     const falling = available.filter((row) => row.changePct! < 0).length;
+    const focusCandidates = sortedRows
+      .filter((row) => row.status === "ok")
+      .slice(0, 5);
+    const end = Date.now();
+    const start = end - 60 * DAY_MS;
+    const focusHistoryResults = await Promise.allSettled(
+      focusCandidates.map((row) =>
+        row.assetType === "a-share"
+          ? getForwardAdjustedDailyHistory(row.code, start, end)
+          : getFundDailyHistory(row.code, start, end),
+      ),
+    );
+    const focusRows: FocusRow[] = focusCandidates.map((row, index) => {
+      const result = focusHistoryResults[index];
+      if (!result || result.status === "rejected") {
+        return { ...row, period5: null, period20: null, historyAvailable: false };
+      }
+      const closes = [...result.value.item]
+        .sort((a, b) => a.date_ms - b.date_ms)
+        .map((bar) => bar.close_price);
+      return {
+        ...row,
+        period5: calculatePeriodReturn(closes, 5),
+        period20: calculatePeriodReturn(closes, 20),
+        historyAvailable: true,
+      };
+    });
 
     return (
       <main className="watchlist-page">
@@ -174,6 +219,18 @@ export default async function Home() {
           <div className="fact"><span className="label">可用行情</span><span className="value">{available.length} 个</span></div>
           <div className="fact"><span className="label">上涨 / 下跌</span><span className="value"><span className="positive">{rising}</span> / <span className="negative">{falling}</span></span></div>
           <div className="fact"><span className="label">暂不可用</span><span className="value">{rows.length - available.length} 个</span></div>
+        </section>
+        <section className="market-section" aria-labelledby="focus-title">
+          <div className="section-heading">
+            <div><h2 id="focus-title">今日重点关注</h2><span className="label">按今日绝对涨跌幅选取前 {focusRows.length} 个有行情标的</span></div>
+          </div>
+          <div className="focus-table-wrapper">
+            <table className="focus-table">
+              <thead><tr><th scope="col">标的</th><th scope="col">今日</th><th scope="col">5日</th><th scope="col">20日</th></tr></thead>
+              <tbody>{focusRows.map((row) => <tr key={row.code}><td className="focus-name"><FocusName row={row} /><span className="label">{row.code} · {assetLabel(row)}</span></td><td className={changeClass(row.changePct!)}>{formatChange(row.changePct!)}</td><td className={row.historyAvailable && row.period5 !== null ? changeClass(row.period5) : "neutral"}>{row.historyAvailable ? row.period5 === null ? "数据不足" : formatChange(row.period5 * 100) : "历史暂不可用"}</td><td className={row.historyAvailable && row.period20 !== null ? changeClass(row.period20) : "neutral"}>{row.historyAvailable ? row.period20 === null ? "数据不足" : formatChange(row.period20 * 100) : "历史暂不可用"}</td></tr>)}</tbody>
+            </table>
+          </div>
+          <p className="scope-note">按今日绝对涨跌幅选取前5个有行情标的；A股多日涨跌按前复权收盘价计算，ETF按交易所日线收盘价计算。</p>
         </section>
         <section className="market-section" aria-labelledby="watchlist-title">
           <div className="section-heading">

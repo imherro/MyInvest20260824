@@ -26,3 +26,12 @@ export function calculateMaxDrawdown(values: readonly number[]): number {
 export function calculateAverage(values: readonly number[]): number {
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
+
+export function calculatePeriodReturn(
+  values: readonly number[],
+  periods: number,
+): number | null {
+  if (values.length <= periods) return null;
+
+  return values.at(-1)! / values[values.length - periods - 1] - 1;
+}

@@ -61,6 +61,56 @@ main {
   background: #fff;
 }
 
+.focus-table-wrapper {
+  overflow: hidden;
+  border: 1px solid #dce2e8;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.focus-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-variant-numeric: tabular-nums;
+}
+
+.focus-table th,
+.focus-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid #edf0f3;
+  text-align: right;
+}
+
+.focus-table th {
+  color: #6b7685;
+  background: #f8f9fb;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.focus-table th:first-child,
+.focus-table td:first-child {
+  width: 40%;
+  text-align: left;
+}
+
+.focus-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.focus-name {
+  overflow: hidden;
+}
+
+.focus-name a,
+.focus-name span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .watchlist-table {
   width: 100%;
   border-collapse: collapse;
@@ -536,6 +586,17 @@ footer {
   .watchlist-table td {
     padding: 11px 5px;
     font-size: 0.72rem;
+  }
+
+  .focus-table th,
+  .focus-table td {
+    padding: 11px 5px;
+    font-size: 0.72rem;
+  }
+
+  .focus-table th:first-child,
+  .focus-table td:first-child {
+    width: 40%;
   }
 
   .watchlist-table th:first-child,
