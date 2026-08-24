@@ -307,3 +307,24 @@ The historical response is sorted once. The chart still receives the latest 250 
 - `npm run build`: passed; the stock route remains dynamically server-rendered. No dependency or lock-file change was needed.
 - At 390 × 844, the two reused fact cards remained readable in two columns, the explanation wrapped normally, and the page and chart showed no visible horizontal overflow.
 - The final production service remained on `0.0.0.0:8030`. <https://invest0830.okbbc.com/stock/300313.SZ> returned HTTP 200 and displayed both real research metrics with the existing snapshot and chart.
+
+## 2026-08-24 — Task 7 review and Task 8 V1 close-out
+
+### Task 7 GitHub review
+
+ChatGPT compared `4ae84e7..749f0c3` on GitHub and passed Task 7 without a repair commit. It accepted the existing Node `MODULE_TYPELESS_PACKAGE_JSON` test warning and explicitly requested no package-type change or warning suppression.
+
+### Task 8 implementation
+
+The homepage now derives today's Shanghai calendar date and compares it with the existing real trading-calendar response. It displays either “今天是交易日” or “今天非交易日，展示最近可用行情” without changing any source timestamp. A minimal root `loading.tsx` supplies one shared navigation message while dynamic Server Component data loads. The README now describes only the delivered V1 features, real Hithink data boundary, local commands, `0.0.0.0:8030` deployment, public URL, and personal-research scope. No new dependency, data layer, client component, or CSS rule was added.
+
+### Task 8 verification
+
+- At the current Shanghai date `20260824`, the real calendar selected the trading-day branch and the latest trading day was also `20260824`. A temporary false-state simulation selected the non-trading-day wording while retaining all real indices, 320 industries, and their source times; the change was removed.
+- Temporary two-second delays verified the shared loading view on navigation to `/` and `/stock/300313.SZ`; both delays were removed.
+- Temporary checks produced `CONFIG_MISSING`, `STOCK_NOT_FOUND`, `INDUSTRY_NOT_FOUND`, and `EMPTY_STOCK_HISTORY` through their existing clean error states. No stack, mock fallback, or unrelated data appeared, and the route-level back links remained available where applicable. Every injection was removed.
+- Source-time expressions remain mapped to their own calendar, index, industry, stock-snapshot, and stock-history responses. Browser checks confirmed each page still presents its corresponding source time; Task 8 adds no time substitution or overwrite.
+- At 390 × 844, `/`, `/industry/884277.TI`, and `/stock/300313.SZ` remained readable with no visible horizontal overflow. The market state, industry breadth/table, stock snapshot/metrics, and chart title were present. No CSS change was required.
+- `npm test`: all four tests passed with the previously accepted module warning unchanged. `npm run build`: passed; all data routes remain dynamically server-rendered.
+- The production service was restarted on `0.0.0.0:8030`. The public home, industry, and stock URLs each returned HTTP 200 with real content. The live industry page showed 其他养殖 (`884277.TI`), its breadth, and three current constituents; the stock page showed 天山生物 (`300313.SZ`). No Cloudflare configuration change was needed.
+- Public HTML contained neither `X-api-key` nor the upstream host. Tracked application files contained no API secret, no mock/fallback data was introduced, and the ignored private watchlist was not read or transmitted.

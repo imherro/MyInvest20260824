@@ -22,6 +22,19 @@ function formatTradingDate(value: string): string {
   return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`;
 }
 
+function formatShanghaiDateCode(timestamp: number): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date(timestamp));
+  const values = Object.fromEntries(
+    parts.map((part) => [part.type, part.value]),
+  );
+  return `${values.year}${values.month}${values.day}`;
+}
+
 function formatShanghaiTime(timestamp: number): string {
   return new Intl.DateTimeFormat("zh-CN", {
     timeZone: "Asia/Shanghai",
@@ -64,6 +77,10 @@ export default async function Home() {
       industryCatalog.item.map((industry) => industry.thscode),
     );
     const latestTradingDay = calendar.item.at(-1);
+    const todayShanghai = formatShanghaiDateCode(Date.now());
+    const isTradingDayToday = calendar.item.some(
+      (day) => day.date === todayShanghai,
+    );
 
     if (!latestTradingDay) {
       throw new HithinkError("当前条件暂无交易日数据。", "EMPTY_CALENDAR");
@@ -112,6 +129,14 @@ export default async function Home() {
           <div className="fact">
             <span className="label">数据源</span>
             <span className="value">同花顺金融数据 API</span>
+          </div>
+          <div className="fact">
+            <span className="label">市场状态</span>
+            <span className="value">
+              {isTradingDayToday
+                ? "今天是交易日"
+                : "今天非交易日，展示最近可用行情"}
+            </span>
           </div>
           <div className="fact">
             <span className="label">最近交易日</span>
