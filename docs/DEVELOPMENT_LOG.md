@@ -161,3 +161,46 @@ The page uses “同花顺行业 · 最新涨跌”, not “主线雷达” or �
 ### Task 3 conclusion
 
 Task 3 passed local acceptance. The homepage now provides a complete real-data, single-day industry cross-section while explicitly avoiding unsupported “main theme” or composite-strength claims.
+
+## 2026-08-24 — Task 3 review and Task 4
+
+### Task 3 review
+
+ChatGPT inspected commit `2883bdf` and passed Task 3 without a repair commit. It considered the direct catalog-to-snapshot lookup acceptable for the current 320-item dataset and explicitly deferred a map-based refactor or duplicate-catalog validation because neither solves a current problem.
+
+### Task 4 decision
+
+Task 4 adds the first drill-down from the homepage industry ranking to `/industry/[thscode]`. The dynamic route validates the URL code against the real `tag=industry` catalog, then shows the selected industry index, its current constituents, market breadth, and a constituent ranking by latest percentage change. It does not add stock links, historical data, charts, search, filters, a database, client-side fetching, or new dependencies.
+
+The current-constituent list is authoritative. An empty list, a missing industry index snapshot, or any missing constituent stock snapshot produces an explicit error instead of silently filtering or substituting data. Index, constituent, and stock-snapshot payloads receive only the runtime validation needed for fields consumed by this page.
+
+### Task 4 API preflight
+
+- Test industry: 其他养殖 (`884277.TI`).
+- Current constituents endpoint returned 3 nonempty records.
+- All 3 constituent codes were sent to the A-share snapshot endpoint in one request; it returned 3 records, with zero missing and zero extra.
+- The request URL was 95 characters, so no batching code was added.
+- Although the offline stock-snapshot contract permits a null top-level timestamp for explicit-code mode, this live response returned a finite millisecond timestamp. The page therefore follows the reviewed Task 4 design and shows separate index and stock snapshot times.
+- Live industry index values at verification: `1550.535`, `+6.381658%`.
+- Live breadth: 1 advance, 2 declines, 0 flat, advance ratio `33.333333%`.
+
+### Task 4 verification
+
+- `npm run build`: passed with `/industry/[thscode]` rendered dynamically.
+- The homepage industry name is a link; clicking 其他养殖 navigated to `/industry/884277.TI`.
+- Detail-page industry code, index value, index percentage, constituent names/codes, prices, percentages, turnover values, and ordering matched the live API response.
+- Constituent order was monotonically non-increasing: 天山生物 (`+20.00%`), `*ST福成` (`-0.36%`), 华英农业 (`-0.49%`). With three rows, these also cover first, second/middle, penultimate, and last rank checks.
+- Displayed breadth summed to the 3 constituents, and the independently recomputed advance ratio formatted to `33.33%`.
+- Index time and stock-snapshot time came from their separate source responses and were displayed independently.
+- A temporary removal of one stock snapshot produced `CONSTITUENT_SNAPSHOT_INCOMPLETE`; the change was restored.
+- A temporary `turnover: NaN` injection produced `INVALID_STOCK_SNAPSHOTS`; the change was restored.
+- `/industry/XXXXXX.TI` produced `INDUSTRY_NOT_FOUND` after catalog validation.
+- At 390 × 844, document, wrapper, and four-column table widths stayed within the viewport; all five breadth cards and all four table columns remained present, with long stock names protected by ellipsis.
+- Served HTML contained no API secret, `X-api-key`, or upstream host, and no mock data was added.
+- Dependencies and lock file remained unchanged.
+
+### Public service binding added by the user
+
+During Task 4 the user required the web service to listen on `0.0.0.0:8030` for an existing Cloudflare tunnel at <https://invest0830.okbbc.com>. This explicit user requirement overrides the original five-file Task 4 diff expectation, so `package.json` is the sixth changed file. Both `npm run dev` and `npm start` now use that host and port; no Cloudflare package, framework, or project configuration was added.
+
+The listener was verified on `0.0.0.0:8030`. The external industry-detail URL returned HTTP 200 with the real industry and constituent content, while its HTML contained neither the API header name nor the upstream host.

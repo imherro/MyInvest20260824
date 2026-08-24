@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
   getIndexSnapshots,
   getIndustryIndices,
@@ -171,7 +173,9 @@ export default async function Home() {
                 {industries.map(({ thscode, name, snapshot }, index) => (
                   <tr key={thscode}>
                     <td className="industry-rank">{index + 1}</td>
-                    <td className="industry-name">{name}</td>
+                    <td className="industry-name">
+                      <Link href={`/industry/${thscode}`}>{name}</Link>
+                    </td>
                     <td>{formatNumber(snapshot.last_price)}</td>
                     <td className={changeClass(snapshot.price_change_ratio_pct)}>
                       {formatChange(snapshot.price_change_ratio_pct, "%")}

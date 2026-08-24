@@ -41,6 +41,29 @@ export type IndustryCatalog = {
   item: IndustryIndex[];
 };
 
+export type IndexConstituent = {
+  thscode: string;
+  ticker: string;
+  name: string;
+};
+
+export type IndexConstituents = {
+  timestamp: number;
+  item: IndexConstituent[];
+};
+
+export type StockSnapshot = {
+  thscode: string;
+  last_price: number;
+  price_change_ratio_pct: number;
+  turnover: number;
+};
+
+export type StockSnapshots = {
+  timestamp: number;
+  item: StockSnapshot[];
+};
+
 export class HithinkError extends Error {
   constructor(
     message: string,
@@ -174,4 +197,62 @@ export async function getIndustryIndices(): Promise<IndustryCatalog> {
   }
 
   return catalog;
+}
+
+export async function getIndexConstituents(
+  thscode: string,
+): Promise<IndexConstituents> {
+  const params = new URLSearchParams({ thscode });
+  const constituents = await hithinkFetch<IndexConstituents>(
+    `/api/a-share-index/constituents/ths-stock-list?${params}`,
+  );
+
+  if (
+    !Number.isFinite(constituents.timestamp) ||
+    !Array.isArray(constituents.item) ||
+    !constituents.item.every(
+      (item) =>
+        typeof item.thscode === "string" &&
+        item.thscode.trim() !== "" &&
+        typeof item.ticker === "string" &&
+        item.ticker.trim() !== "" &&
+        typeof item.name === "string" &&
+        item.name.trim() !== "",
+    )
+  ) {
+    throw new HithinkError(
+      "指数成分股响应格式不正确。",
+      "INVALID_INDEX_CONSTITUENTS",
+    );
+  }
+
+  return constituents;
+}
+
+export async function getStockSnapshots(
+  thscodes: readonly string[],
+): Promise<StockSnapshots> {
+  const params = new URLSearchParams({
+    thscodes: thscodes.join(","),
+  });
+  const snapshots = await hithinkFetch<StockSnapshots>(
+    `/api/a-share/prices/snapshot?${params}`,
+  );
+
+  if (
+    !Number.isFinite(snapshots.timestamp) ||
+    !Array.isArray(snapshots.item) ||
+    !snapshots.item.every(
+      (item) =>
+        typeof item.thscode === "string" &&
+        item.thscode.trim() !== "" &&
+        Number.isFinite(item.last_price) &&
+        Number.isFinite(item.price_change_ratio_pct) &&
+        Number.isFinite(item.turnover),
+    )
+  ) {
+    throw new HithinkError("股票快照响应格式不正确。", "INVALID_STOCK_SNAPSHOTS");
+  }
+
+  return snapshots;
 }
