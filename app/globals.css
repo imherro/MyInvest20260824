@@ -19,6 +19,120 @@ main {
   padding: 72px 0 40px;
 }
 
+.watchlist-page {
+  width: min(1180px, calc(100% - 48px));
+}
+
+.watchlist-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.market-link {
+  margin-top: 18px;
+  color: #49627f;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.market-link:hover {
+  text-decoration: underline;
+}
+
+.watchlist-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.watchlist-summary .fact {
+  padding: 18px;
+  border: 1px solid #dce2e8;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.watchlist-table-wrapper {
+  overflow: hidden;
+  border: 1px solid #dce2e8;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.watchlist-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-variant-numeric: tabular-nums;
+}
+
+.watchlist-table th,
+.watchlist-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid #edf0f3;
+  text-align: right;
+}
+
+.watchlist-table th {
+  color: #6b7685;
+  background: #f8f9fb;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.watchlist-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.watchlist-table th:first-child,
+.watchlist-table td:first-child {
+  width: 58px;
+  text-align: center;
+}
+
+.watchlist-table th:nth-child(2),
+.watchlist-table td:nth-child(2) {
+  width: 30%;
+  text-align: left;
+}
+
+.watchlist-table th:nth-child(3),
+.watchlist-table td:nth-child(3),
+.watchlist-table th:nth-child(4),
+.watchlist-table td:nth-child(4),
+.watchlist-table th:nth-child(5),
+.watchlist-table td:nth-child(5) {
+  width: 130px;
+}
+
+.watchlist-name {
+  overflow: hidden;
+}
+
+.watchlist-name strong,
+.watchlist-name a,
+.watchlist-name span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.watchlist-status {
+  width: 260px;
+  color: #596575;
+  font-size: 0.8rem;
+  text-align: left !important;
+}
+
+.watchlist-status.unsupported,
+.watchlist-status.missing,
+.watchlist-status.error {
+  color: #7b5b22;
+}
+
 h1 {
   margin: 0;
   font-size: clamp(2.5rem, 8vw, 4.5rem);
@@ -396,6 +510,65 @@ footer {
 }
 
 @media (max-width: 560px) {
+  .watchlist-page {
+    width: min(680px, calc(100% - 32px));
+  }
+
+  .watchlist-header {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .market-link {
+    margin-top: -24px;
+    margin-bottom: 30px;
+  }
+
+  .watchlist-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .watchlist-summary .fact {
+    padding: 16px;
+  }
+
+  .watchlist-table th,
+  .watchlist-table td {
+    padding: 11px 5px;
+    font-size: 0.72rem;
+  }
+
+  .watchlist-table th:first-child,
+  .watchlist-table td:first-child {
+    width: 36px;
+  }
+
+  .watchlist-table th:nth-child(2),
+  .watchlist-table td:nth-child(2) {
+    width: 33%;
+  }
+
+  .watchlist-table th:nth-child(3),
+  .watchlist-table td:nth-child(3) {
+    width: 19%;
+  }
+
+  .watchlist-table th:nth-child(4),
+  .watchlist-table td:nth-child(4) {
+    width: 19%;
+  }
+
+  .watchlist-turnover {
+    display: none;
+  }
+
+  .watchlist-status {
+    width: 29%;
+    font-size: 0.68rem !important;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
   main {
     padding-top: 44px;
   }

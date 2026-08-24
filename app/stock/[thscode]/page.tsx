@@ -137,7 +137,7 @@ export default async function StockDetail({
     return (
       <main>
         <Link className="back-link" href="/">
-          ← 返回市场
+          ← 返回首页
         </Link>
         <header className="detail-header">
           <div>
@@ -250,7 +250,7 @@ export default async function StockDetail({
     return (
       <main>
         <Link className="back-link" href="/">
-          ← 返回市场
+          ← 返回首页
         </Link>
         <section className="panel error" role="alert">
           <h1 className="error-title">股票数据暂不可用</h1>

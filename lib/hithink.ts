@@ -85,6 +85,19 @@ export type StockDailyHistory = {
   item: StockDailyBar[];
 };
 
+export type FundMarketSnapshotItem = {
+  thscode: string;
+  last_price: number;
+  price_change: number;
+  price_change_ratio_pct: number;
+  turnover: number;
+};
+
+export type FundMarketSnapshot = {
+  timestamp: number;
+  item: FundMarketSnapshotItem[];
+};
+
 export type AShareTicker = {
   thscode: string;
   name: string;
@@ -286,6 +299,36 @@ export async function getStockSnapshots(
   }
 
   return snapshots;
+}
+
+export async function getFundMarketSnapshot(
+  thscode: string,
+): Promise<FundMarketSnapshot> {
+  const params = new URLSearchParams({ thscode });
+  const snapshot = await hithinkFetch<FundMarketSnapshot>(
+    `/api/fund/market/snapshot?${params}`,
+  );
+
+  if (
+    !Number.isFinite(snapshot.timestamp) ||
+    !Array.isArray(snapshot.item) ||
+    !snapshot.item.every(
+      (item) =>
+        typeof item.thscode === "string" &&
+        item.thscode.trim() !== "" &&
+        Number.isFinite(item.last_price) &&
+        Number.isFinite(item.price_change) &&
+        Number.isFinite(item.price_change_ratio_pct) &&
+        Number.isFinite(item.turnover),
+    )
+  ) {
+    throw new HithinkError(
+      "场内基金行情响应格式不正确。",
+      "INVALID_FUND_MARKET_SNAPSHOT",
+    );
+  }
+
+  return snapshot;
 }
 
 export async function getForwardAdjustedDailyHistory(

@@ -334,3 +334,19 @@ The homepage now derives today's Shanghai calendar date and compares it with the
 ChatGPT used GitHub to compare `749f0c399a873741a21950be026b13e1bea4b4a1..01f5c7605e812ae9a55f6203ffa11e51e2229553` and formally passed Task 8. The review confirmed the strict four-file diff, Shanghai date calculation independent of server timezone, unchanged source timestamp boundaries, minimal Server Component loading UI, README consistency with port 8030, append-only development history, and server-only secret boundary.
 
 Final disposition: V1 passed and is formally frozen at `01f5c7605e812ae9a55f6203ffa11e51e2229553`. Mandatory fixes: 0. High: 0; Medium: 0; Low: 0. No further development task or optional optimization was assigned.
+
+## 2026-08-24 — V2 Task 1 自选股日常看板
+
+V2 从最短的个人研究闭环开始：根路径现在直接显示本地自选清单的最新行情，原有市场与行业总览移动到 `/market`。清单由忽略的 `.local/watchlist.csv` 读取；实现只接受 `name,code,market,asset_type` 四列，逐行校验空字段、格式、空清单与重复代码。该文件不进入仓库；用户明确允许其标的字段在公开网页展示。
+
+本次清单共 34 个标的：21 个 A 股由一次显式代码批量快照取得，12 个场内 ETF 分别请求并用 `Promise.allSettled` 隔离失败，1 个港股因当前数据源能力明确显示为不支持且不会请求上游。正常行按绝对涨跌幅排序；同幅时按有符号涨跌幅和代码稳定排序。A 股可进入已有股票详情页，ETF 与港股暂不虚构详情入口。
+
+桌面端使用 1180px 的宽表作为主界面，显示排名、标的、最新价、涨跌幅、成交额和行情状态/时间；390px 窄屏隐藏成交额列并保持其余核心信息无水平溢出。行情时间只显示对应上游快照的真实时间；A 股显式代码模式没有时间时会直接标示“时间未提供”，不使用当前时间替代。
+
+### V2 Task 1 verification
+
+- 真实数据预检：A 股批量快照完整返回 21 个请求代码；12 个 ETF 请求均成功；港股未发起请求。所有正常行情字段和来源时间均为有限值。
+- 浏览器宽屏检查（1440px）：页面宽 1180px、表格宽 1178px，无水平溢出；根页面显示 34 个标的、可用/不可用汇总、A 股详情链接、ETF 无详情链接和港股不支持状态。
+- 浏览器窄屏检查（390 × 844）：成交额列按预期隐藏，页面与表格均无水平溢出，核心行情与状态仍可读。
+- `npm test`：4 个既有 Node 原生测试通过；保留既有 `MODULE_TYPELESS_PACKAGE_JSON` 警告，不新增包类型或抑制配置。
+- `npm run build`：通过；`/`、`/market`、`/industry/[thscode]`、`/stock/[thscode]` 均保持动态服务端渲染。

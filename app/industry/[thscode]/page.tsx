@@ -114,7 +114,7 @@ export default async function IndustryDetail({
 
     return (
       <main>
-        <Link className="back-link" href="/">
+        <Link className="back-link" href="/market">
           ← 返回市场
         </Link>
         <header className="detail-header">
@@ -211,7 +211,7 @@ export default async function IndustryDetail({
 
     return (
       <main>
-        <Link className="back-link" href="/">
+        <Link className="back-link" href="/market">
           ← 返回市场
         </Link>
         <section className="panel error" role="alert">
