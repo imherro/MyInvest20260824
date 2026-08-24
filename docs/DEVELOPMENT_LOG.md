@@ -276,3 +276,34 @@ The server explicitly requests `interval=1d&adjust=forward` for an approximately
 - `npm run build`: passed with the stock route remaining dynamically server-rendered.
 - The final production server listened on `0.0.0.0:8030`. <https://invest0830.okbbc.com/stock/300313.SZ> returned HTTP 200, retained the live snapshot, contained the 250-bar chart payload, and rendered the chart in the browser.
 - Public HTML contained neither `X-api-key` nor `fuyao.aicubes.cn`; the Client Component received only dates, OHLC tuples, volume, and moving-average arrays.
+
+## 2026-08-24 — Task 6 review and Task 7
+
+### Task 6 GitHub review
+
+ChatGPT compared `83570d2..4ae84e7` on GitHub and passed Task 6 without a repair commit. It confirmed the exact historical endpoint contract, finite runtime checks, explicit front adjustment, sorting and 250-bar limit, moving-average semantics, narrow Client Component boundary, ECharts lifecycle, mobile layout, dependency lock, security boundary, and absence of unrelated features.
+
+### Task 7 scope and implementation
+
+Task 7 reuses the existing front-adjusted daily history and adds only two objective derived values: maximum drawdown over the latest 60 trading days, calculated from closes, and average turnover over the latest 20 trading days. The page does not label them as scores, signals, ratings, or advice. A small `lib/stock-metrics.ts` now contains the three pure calculations currently used by the page: moving average, maximum drawdown, and arithmetic average.
+
+The historical response is sorted once. The chart still receives the latest 250 bars, while the research metrics use the latest 60 and 20 bars from the same sorted real response. Fewer than 60 or 20 bars produces “数据不足” for that metric without turning the stock page into an error state.
+
+### Task 7 real-data preflight
+
+- Test stock: 天山生物 (`300313.SZ`); 266 real front-adjusted daily bars, not hard-coded.
+- Latest-60 window: `2026-05-29` through `2026-08-24`.
+- Preceding peak used by the worst drawdown: close `9.66` on `2026-06-01`.
+- Subsequent trough: close `7.40` on `2026-07-22`.
+- Maximum drawdown: `7.40 / 9.66 - 1 = -0.23395445134575565`; page display `-23.40%`.
+- Latest-20 window: `2026-07-28` through `2026-08-24`.
+- Average turnover: `199050321.5325`, or `1.990503215325` hundred-million units; page display `1.99 亿`.
+
+### Task 7 verification
+
+- `npm test`: all four Node-native tests passed. Coverage includes complete-window moving averages, the valid peak-to-later-trough drawdown path, rising and flat zero-drawdown cases, and arithmetic average. No test dependency or framework was added.
+- Temporarily retaining only 30 real bars kept the snapshot and chart visible, showed maximum drawdown as “数据不足”, and still calculated the 20-day average turnover. Retaining only 10 bars kept the page working and showed both metrics as “数据不足”. Both injections were removed.
+- With the full response restored, the browser displayed `-23.40%`, `1.99 亿`, and 250 chart bars alongside the unchanged real stock snapshot.
+- `npm run build`: passed; the stock route remains dynamically server-rendered. No dependency or lock-file change was needed.
+- At 390 × 844, the two reused fact cards remained readable in two columns, the explanation wrapped normally, and the page and chart showed no visible horizontal overflow.
+- The final production service remained on `0.0.0.0:8030`. <https://invest0830.okbbc.com/stock/300313.SZ> returned HTTP 200 and displayed both real research metrics with the existing snapshot and chart.

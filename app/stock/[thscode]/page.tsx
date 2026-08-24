@@ -6,6 +6,11 @@ import {
   getStockSnapshots,
   HithinkError,
 } from "../../../lib/hithink";
+import {
+  calculateAverage,
+  calculateMaxDrawdown,
+  calculateMovingAverage,
+} from "../../../lib/stock-metrics";
 import StockKlineChart from "./StockKlineChart";
 
 export const dynamic = "force-dynamic";
@@ -43,19 +48,6 @@ function formatShanghaiDate(timestamp: number): string {
     parts.map((part) => [part.type, part.value]),
   );
   return `${values.year}-${values.month}-${values.day}`;
-}
-
-function calculateMA(
-  values: readonly number[],
-  window: number,
-): (number | null)[] {
-  let sum = 0;
-
-  return values.map((value, index) => {
-    sum += value;
-    if (index >= window) sum -= values[index - window];
-    return index >= window - 1 ? sum / window : null;
-  });
 }
 
 function formatChange(value: number, suffix = ""): string {
@@ -112,9 +104,20 @@ export default async function StockDetail({
       );
     }
 
-    const bars = [...history.item]
-      .sort((a, b) => a.date_ms - b.date_ms)
-      .slice(-250);
+    const sortedHistory = [...history.item].sort(
+      (a, b) => a.date_ms - b.date_ms,
+    );
+    const bars = sortedHistory.slice(-250);
+    const last60 = sortedHistory.slice(-60);
+    const last20 = sortedHistory.slice(-20);
+    const maxDrawdown60 =
+      sortedHistory.length >= 60
+        ? calculateMaxDrawdown(last60.map((bar) => bar.close_price))
+        : null;
+    const averageTurnover20 =
+      sortedHistory.length >= 20
+        ? calculateAverage(last20.map((bar) => bar.turnover))
+        : null;
     const dates = bars.map((bar) => formatShanghaiDate(bar.date_ms));
     const candles = bars.map(
       (bar) =>
@@ -127,9 +130,9 @@ export default async function StockDetail({
     );
     const volumes = bars.map((bar) => bar.volume);
     const closes = bars.map((bar) => bar.close_price);
-    const ma20 = calculateMA(closes, 20);
-    const ma60 = calculateMA(closes, 60);
-    const ma120 = calculateMA(closes, 120);
+    const ma20 = calculateMovingAverage(closes, 20);
+    const ma60 = calculateMovingAverage(closes, 60);
+    const ma120 = calculateMovingAverage(closes, 120);
 
     return (
       <main>
@@ -182,6 +185,35 @@ export default async function StockDetail({
             <span className="label">成交额</span>
             <strong>{formatNumber(snapshot.turnover / 100_000_000)} 亿</strong>
           </div>
+        </section>
+        <section
+          className="stock-history-section"
+          aria-labelledby="stock-metrics-title"
+        >
+          <div className="section-heading">
+            <h2 id="stock-metrics-title">研究指标</h2>
+          </div>
+          <div className="stock-metrics">
+            <div className="stock-fact">
+              <span className="label">近60日最大回撤</span>
+              <strong>
+                {maxDrawdown60 === null
+                  ? "数据不足"
+                  : `${formatNumber(maxDrawdown60 * 100)}%`}
+              </strong>
+            </div>
+            <div className="stock-fact">
+              <span className="label">近20日平均成交额</span>
+              <strong>
+                {averageTurnover20 === null
+                  ? "数据不足"
+                  : `${formatNumber(averageTurnover20 / 100_000_000)} 亿`}
+              </strong>
+            </div>
+          </div>
+          <p className="scope-note">
+            最大回撤按最近60个交易日前复权收盘价计算；平均成交额按最近20个交易日计算。
+          </p>
         </section>
         <section
           className="stock-history-section"
