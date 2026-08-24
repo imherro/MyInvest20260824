@@ -124,6 +124,11 @@ main {
   font-size: 0.7rem;
 }
 
+.focus-snapshot-time {
+  color: #6b7685;
+  font-size: 0.7rem;
+}
+
 .focus-sparkline {
   display: block;
   width: 110px;
@@ -652,6 +657,10 @@ footer {
   }
 
   .focus-name .focus-history-date {
+    font-size: 0.62rem;
+  }
+
+  .focus-name .focus-snapshot-time {
     font-size: 0.62rem;
   }
 

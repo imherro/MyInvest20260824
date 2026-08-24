@@ -93,6 +93,19 @@ function formatShanghaiMonthDay(timestamp: number): string {
   return `${values.month}-${values.day}`;
 }
 
+function formatShanghaiMonthDayTime(timestamp: number): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(timestamp));
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.month}-${values.day} ${values.hour}:${values.minute}`;
+}
+
 function changeClass(value: number): string {
   if (value > 0) return "positive";
   if (value < 0) return "negative";
@@ -132,11 +145,14 @@ function FocusName({ row }: { row: FocusRow }) {
   const historyDate = row.historyDateMs === null
     ? "历史指标截止日不可用"
     : `历史指标截至 ${formatShanghaiMonthDay(row.historyDateMs)}`;
+  const snapshotTime = row.timestamp === null || row.timestamp === undefined
+    ? "行情时间未提供"
+    : `行情快照 ${formatShanghaiMonthDayTime(row.timestamp)}`;
 
   if (row.market === "CN" && row.assetType === "a-share") {
-    return <><Link className="stock-link" href={`/stock/${row.code}`}>{row.name}</Link><span className="focus-mobile-position">20日位置 {mobilePosition}</span><span className="focus-history-date">{historyDate}</span><FocusSparkline values={row.trend20} /></>;
+    return <><Link className="stock-link" href={`/stock/${row.code}`}>{row.name}</Link><span className="focus-mobile-position">20日位置 {mobilePosition}</span><span className="focus-snapshot-time">{snapshotTime}</span><span className="focus-history-date">{historyDate}</span><FocusSparkline values={row.trend20} /></>;
   }
-  return <><Link className="stock-link" href={`/etf/${row.code}`}>{row.name}</Link><span className="focus-mobile-position">20日位置 {mobilePosition}</span><span className="focus-history-date">{historyDate}</span><FocusSparkline values={row.trend20} /></>;
+  return <><Link className="stock-link" href={`/etf/${row.code}`}>{row.name}</Link><span className="focus-mobile-position">20日位置 {mobilePosition}</span><span className="focus-snapshot-time">{snapshotTime}</span><span className="focus-history-date">{historyDate}</span><FocusSparkline values={row.trend20} /></>;
 }
 
 export default async function Home() {
@@ -293,7 +309,7 @@ export default async function Home() {
               <tbody>{focusRows.map((row) => <tr key={row.code}><td className="focus-name"><FocusName row={row} /><span className="label">{row.code} · {assetLabel(row)}</span></td><td className={changeClass(row.changePct!)}>{formatChange(row.changePct!)}</td><td className={row.historyAvailable && row.period5 !== null ? changeClass(row.period5) : "neutral"}>{row.historyAvailable ? row.period5 === null ? "数据不足" : formatChange(row.period5 * 100) : "历史暂不可用"}</td><td className={row.historyAvailable && row.period20 !== null ? changeClass(row.period20) : "neutral"}>{row.historyAvailable ? row.period20 === null ? "数据不足" : formatChange(row.period20 * 100) : "历史暂不可用"}</td><td className="focus-turnover-ratio">{row.historyAvailable ? row.turnoverRatio === null ? "数据不足" : `${formatNumber(row.turnoverRatio)}×` : "历史暂不可用"}</td><td className="focus-range-position">{row.historyAvailable ? row.rangePosition20 === null ? "数据不足" : formatPosition(row.rangePosition20) : "历史暂不可用"}</td></tr>)}</tbody>
             </table>
           </div>
-          <p className="scope-note">按今日绝对涨跌幅选取前5个有行情标的；A股多日涨跌按前复权收盘价计算，ETF按交易所日线收盘价计算。成交额比 = 最近历史交易日成交额 ÷ 此前20个交易日平均成交额；这是历史日线比较，不代表盘中实时量比。“最新”为行情快照涨跌；5日、20日、成交额比和20日位置均截至行内标注的历史交易日。</p>
+          <p className="scope-note">按今日绝对涨跌幅选取前5个有行情标的；A股多日涨跌按前复权收盘价计算，ETF按交易所日线收盘价计算。成交额比 = 最近历史交易日成交额 ÷ 此前20个交易日平均成交额；这是历史日线比较，不代表盘中实时量比。“最新”为行情快照涨跌，行情时间见标的行；5日、20日、成交额比、20日位置和迷你走势均基于历史日线，截止日见标的行。</p>
         </section>
         <section className="market-section" aria-labelledby="watchlist-title">
           <div className="section-heading">
