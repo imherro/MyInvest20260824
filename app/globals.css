@@ -119,6 +119,11 @@ main {
   display: none !important;
 }
 
+.focus-history-date {
+  color: #6b7685;
+  font-size: 0.7rem;
+}
+
 .watchlist-table {
   width: 100%;
   border-collapse: collapse;
@@ -623,6 +628,10 @@ footer {
   .focus-name .focus-mobile-position {
     display: block !important;
     color: #6b7685;
+    font-size: 0.62rem;
+  }
+
+  .focus-name .focus-history-date {
     font-size: 0.62rem;
   }
 
