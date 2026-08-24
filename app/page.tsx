@@ -33,6 +33,7 @@ type FocusRow = WatchlistRow & {
   turnoverRatio: number | null;
   rangePosition20: number | null;
   historyDateMs: number | null;
+  trend20: number[] | null;
   historyAvailable: boolean;
 };
 
@@ -51,6 +52,23 @@ function formatChange(value: number): string {
 
 function formatPosition(value: number): string {
   return `${Math.round(value * 100)}%`;
+}
+
+function FocusSparkline({ values }: { values: readonly number[] | null }) {
+  if (values === null) return <span className="focus-sparkline-note">走势暂不可用</span>;
+  if (values.length < 2) return <span className="focus-sparkline-note">走势数据不足</span>;
+
+  const width = 110;
+  const height = 28;
+  const minimum = Math.min(...values);
+  const maximum = Math.max(...values);
+  const points = values.map((value, index) => {
+    const x = (index / (values.length - 1)) * width;
+    const y = maximum === minimum ? height / 2 : height - ((value - minimum) / (maximum - minimum)) * height;
+    return `${x},${y}`;
+  }).join(" ");
+
+  return <svg className="focus-sparkline" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="最近20个交易日收盘价走势"><polyline fill="none" points={points} /></svg>;
 }
 
 function formatShanghaiTime(timestamp: number): string {
@@ -116,9 +134,9 @@ function FocusName({ row }: { row: FocusRow }) {
     : `历史指标截至 ${formatShanghaiMonthDay(row.historyDateMs)}`;
 
   if (row.market === "CN" && row.assetType === "a-share") {
-    return <><Link className="stock-link" href={`/stock/${row.code}`}>{row.name}</Link><span className="focus-mobile-position">20日位置 {mobilePosition}</span><span className="focus-history-date">{historyDate}</span></>;
+    return <><Link className="stock-link" href={`/stock/${row.code}`}>{row.name}</Link><span className="focus-mobile-position">20日位置 {mobilePosition}</span><span className="focus-history-date">{historyDate}</span><FocusSparkline values={row.trend20} /></>;
   }
-  return <><Link className="stock-link" href={`/etf/${row.code}`}>{row.name}</Link><span className="focus-mobile-position">20日位置 {mobilePosition}</span><span className="focus-history-date">{historyDate}</span></>;
+  return <><Link className="stock-link" href={`/etf/${row.code}`}>{row.name}</Link><span className="focus-mobile-position">20日位置 {mobilePosition}</span><span className="focus-history-date">{historyDate}</span><FocusSparkline values={row.trend20} /></>;
 }
 
 export default async function Home() {
@@ -227,6 +245,7 @@ export default async function Home() {
           turnoverRatio: null,
           rangePosition20: null,
           historyDateMs: null,
+          trend20: null,
           historyAvailable: false,
         };
       }
@@ -242,6 +261,7 @@ export default async function Home() {
         turnoverRatio: calculateLatestToPreviousAverage(turnovers, 20),
         rangePosition20: calculateRangePosition(closes, 20),
         historyDateMs: sortedBars.at(-1)?.date_ms ?? null,
+        trend20: closes.slice(-20),
         historyAvailable: true,
       };
     });
