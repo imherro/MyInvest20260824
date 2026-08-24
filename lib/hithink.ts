@@ -31,6 +31,16 @@ export type IndexSnapshots = {
   item: IndexSnapshot[];
 };
 
+export type IndustryIndex = {
+  thscode: string;
+  name: string;
+};
+
+export type IndustryCatalog = {
+  timestamp: number;
+  item: IndustryIndex[];
+};
+
 export class HithinkError extends Error {
   constructor(
     message: string,
@@ -122,9 +132,46 @@ export async function getIndexSnapshots(
     `/api/a-share-index/prices/snapshot?${params}`,
   );
 
-  if (!Number.isFinite(snapshots.timestamp) || !Array.isArray(snapshots.item)) {
+  if (
+    !Number.isFinite(snapshots.timestamp) ||
+    !Array.isArray(snapshots.item) ||
+    !snapshots.item.every(
+      (item) =>
+        typeof item.thscode === "string" &&
+        item.thscode.trim() !== "" &&
+        Number.isFinite(item.last_price) &&
+        Number.isFinite(item.price_change) &&
+        Number.isFinite(item.price_change_ratio_pct),
+    )
+  ) {
     throw new HithinkError("指数快照响应格式不正确。", "INVALID_INDEX_SNAPSHOTS");
   }
 
   return snapshots;
+}
+
+export async function getIndustryIndices(): Promise<IndustryCatalog> {
+  const catalog = await hithinkFetch<IndustryCatalog>(
+    "/api/a-share-index/catalog/ths-index-list?tag=industry",
+  );
+
+  if (
+    !Number.isFinite(catalog.timestamp) ||
+    !Array.isArray(catalog.item) ||
+    !catalog.item.every(
+      (item) =>
+        typeof item.thscode === "string" &&
+        item.thscode.trim() !== "" &&
+        typeof item.name === "string" &&
+        item.name.trim() !== "",
+    )
+  ) {
+    throw new HithinkError("行业目录响应格式不正确。", "INVALID_INDUSTRY_CATALOG");
+  }
+
+  if (catalog.item.length === 0) {
+    throw new HithinkError("同花顺行业目录暂无数据。", "EMPTY_INDUSTRY_CATALOG");
+  }
+
+  return catalog;
 }

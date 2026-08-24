@@ -1,5 +1,6 @@
 import {
   getIndexSnapshots,
+  getIndustryIndices,
   getTradingDays,
   HithinkError,
 } from "../lib/hithink";
@@ -52,10 +53,14 @@ function changeClass(value: number): string {
 
 export default async function Home() {
   try {
-    const [calendar, indexSnapshots] = await Promise.all([
+    const [calendar, indexSnapshots, industryCatalog] = await Promise.all([
       getTradingDays(),
       getIndexSnapshots(MAJOR_INDICES.map((index) => index.thscode)),
+      getIndustryIndices(),
     ]);
+    const industrySnapshots = await getIndexSnapshots(
+      industryCatalog.item.map((industry) => industry.thscode),
+    );
     const latestTradingDay = calendar.item.at(-1);
 
     if (!latestTradingDay) {
@@ -76,6 +81,26 @@ export default async function Home() {
 
       return { ...index, snapshot };
     });
+    const industries = industryCatalog.item
+      .map((industry) => {
+        const snapshot = industrySnapshots.item.find(
+          (item) => item.thscode === industry.thscode,
+        );
+
+        if (!snapshot) {
+          throw new HithinkError(
+            `行业快照缺少 ${industry.name}（${industry.thscode}）。`,
+            "INDUSTRY_SNAPSHOT_INCOMPLETE",
+          );
+        }
+
+        return { ...industry, snapshot };
+      })
+      .sort(
+        (a, b) =>
+          b.snapshot.price_change_ratio_pct -
+          a.snapshot.price_change_ratio_pct,
+      );
 
     return (
       <main>
@@ -121,6 +146,44 @@ export default async function Home() {
               </article>
             ))}
           </div>
+        </section>
+        <section className="market-section" aria-labelledby="industry-title">
+          <div className="section-heading">
+            <div>
+              <h2 id="industry-title">同花顺行业 · 最新涨跌</h2>
+              <span className="label">共 {industries.length} 个行业</span>
+            </div>
+            <span className="label">
+              行业行情时间 {formatShanghaiTime(industrySnapshots.timestamp)}
+            </span>
+          </div>
+          <div className="industry-table-wrapper">
+            <table className="industry-table">
+              <thead>
+                <tr>
+                  <th scope="col">排名</th>
+                  <th scope="col">行业</th>
+                  <th scope="col">最新点位</th>
+                  <th scope="col">涨跌幅</th>
+                </tr>
+              </thead>
+              <tbody>
+                {industries.map(({ thscode, name, snapshot }, index) => (
+                  <tr key={thscode}>
+                    <td className="industry-rank">{index + 1}</td>
+                    <td className="industry-name">{name}</td>
+                    <td>{formatNumber(snapshot.last_price)}</td>
+                    <td className={changeClass(snapshot.price_change_ratio_pct)}>
+                      {formatChange(snapshot.price_change_ratio_pct, "%")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="scope-note">
+            按最新涨跌幅降序排列，仅反映单日行业指数表现，不代表中期主线。
+          </p>
         </section>
         <footer>数据仅供个人研究，不构成投资建议。</footer>
       </main>
