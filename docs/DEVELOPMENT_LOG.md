@@ -244,3 +244,35 @@ Task 5 closes the first Market → Industry → Stock business loop with a basic
 - At 390 × 844, document and body widths stayed within the viewport, the name and price remained readable, and all six fact cards were present without a table or horizontal scrolling.
 - The production server listened on `0.0.0.0:8030`. <https://invest0830.okbbc.com/stock/300313.SZ> returned HTTP 200 with the real name, code, price, and volume label.
 - Served public HTML contained neither `X-api-key` nor the upstream host. No mock fallback or dependency was added; `package.json` and `package-lock.json` remained unchanged.
+
+## 2026-08-24 — Task 5 review and Task 6
+
+### Task 5 GitHub review
+
+ChatGPT compared `35177fe..83570d2` on GitHub and passed Task 5 without a repair commit. It confirmed the exact A-share identity match, the deliberately narrow shared snapshot validation, the stock-page-only detail validation, truthful nullable timestamp handling, navigation, mobile layout, and server-only secret boundary. The Market → Industry → Stock MVP loop is formally complete.
+
+### Task 6 scope and implementation
+
+Task 6 adds one real price-history view below the existing stock snapshot: at most 250 front-adjusted daily candlesticks, MA20/60/120 based on front-adjusted closes, and volume. It does not add drawdown, average turnover, indicators beyond those three moving averages, period or adjustment switches, a database, an API route, or client-side data fetching.
+
+The server explicitly requests `interval=1d&adjust=forward` for an approximately 400-calendar-day window, validates the historical timestamp and every OHLCV/turnover number, sorts by `date_ms`, and retains the latest 250 bars. Moving averages are calculated on the server without rounding; values before a complete window remain null. The only Client Component receives serializable chart arrays and owns only the ECharts lifecycle.
+
+### Task 6 API preflight
+
+- Test stock: 天山生物 (`300313.SZ`), used only for acceptance and not hard-coded.
+- Endpoint: `GET /api/a-share/prices/historical` with one `thscode`, millisecond `start/end`, `interval=1d`, and explicit `adjust=forward`.
+- Business response: `code=0`, timestamp `1787500800000`, 266 raw bars.
+- Raw first and last `date_ms`: `1753027200000` and `1787500800000`.
+- Every returned `date_ms`, OHLC, volume, and turnover value was finite.
+
+### Task 6 verification
+
+- The page displayed 250 sorted bars, from `2025-08-12` through `2026-08-24`, with the latest bar matching the live response.
+- Independent last-window calculations matched the values serialized to the chart within floating-point error: MA20 `9.766500000000002`, MA60 `8.784666666666665`, and MA120 `8.511083333333335`.
+- The chart rendered one canvas with candlesticks, MA20/60/120, volume, tooltip/crosshair configuration, inside zoom, and a visible slider. Its canvas accepted browser interaction and resized from 680 × 520 desktop to 343 × 440 mobile.
+- A temporary `close_price = NaN` injection produced `INVALID_STOCK_HISTORY`; a temporary empty item array produced `EMPTY_STOCK_HISTORY`; reversing the API array still produced 250 ascending dates. All injections were removed.
+- At the 390 × 844 mobile viewport, body and document had no horizontal overflow, the chart stayed within the page, and the snapshot facts, title, history time, adjustment wording, and chart remained readable.
+- `echarts` `6.1.0` is the sole new dependency; no React chart wrapper or second abstraction was added.
+- `npm run build`: passed with the stock route remaining dynamically server-rendered.
+- The final production server listened on `0.0.0.0:8030`. <https://invest0830.okbbc.com/stock/300313.SZ> returned HTTP 200, retained the live snapshot, contained the 250-bar chart payload, and rendered the chart in the browser.
+- Public HTML contained neither `X-api-key` nor `fuyao.aicubes.cn`; the Client Component received only dates, OHLC tuples, volume, and moving-average arrays.

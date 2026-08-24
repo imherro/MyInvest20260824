@@ -70,6 +70,21 @@ export type StockSnapshots = {
   item: StockSnapshot[];
 };
 
+export type StockDailyBar = {
+  date_ms: number;
+  open_price: number;
+  high_price: number;
+  low_price: number;
+  close_price: number;
+  volume: number;
+  turnover: number;
+};
+
+export type StockDailyHistory = {
+  timestamp: number;
+  item: StockDailyBar[];
+};
+
 export type AShareTicker = {
   thscode: string;
   name: string;
@@ -271,6 +286,45 @@ export async function getStockSnapshots(
   }
 
   return snapshots;
+}
+
+export async function getForwardAdjustedDailyHistory(
+  thscode: string,
+  start: number,
+  end: number,
+): Promise<StockDailyHistory> {
+  const params = new URLSearchParams({
+    thscode,
+    interval: "1d",
+    start: String(start),
+    end: String(end),
+    adjust: "forward",
+  });
+  const history = await hithinkFetch<StockDailyHistory>(
+    `/api/a-share/prices/historical?${params}`,
+  );
+  if (
+    !Number.isFinite(history.timestamp) ||
+    !Array.isArray(history.item) ||
+    !history.item.every(
+      (item) =>
+        Number.isFinite(item.date_ms) &&
+        Number.isFinite(item.open_price) &&
+        Number.isFinite(item.high_price) &&
+        Number.isFinite(item.low_price) &&
+        Number.isFinite(item.close_price) &&
+        Number.isFinite(item.volume) &&
+        Number.isFinite(item.turnover),
+    )
+  ) {
+    throw new HithinkError("股票历史行情响应格式不正确。", "INVALID_STOCK_HISTORY");
+  }
+
+  if (history.item.length === 0) {
+    throw new HithinkError("股票历史行情暂无数据。", "EMPTY_STOCK_HISTORY");
+  }
+
+  return history;
 }
 
 export async function getAshareTicker(

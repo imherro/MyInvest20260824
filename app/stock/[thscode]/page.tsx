@@ -2,11 +2,15 @@ import Link from "next/link";
 
 import {
   getAshareTicker,
+  getForwardAdjustedDailyHistory,
   getStockSnapshots,
   HithinkError,
 } from "../../../lib/hithink";
+import StockKlineChart from "./StockKlineChart";
 
 export const dynamic = "force-dynamic";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 function formatShanghaiTime(timestamp: number): string {
   return new Intl.DateTimeFormat("zh-CN", {
@@ -26,6 +30,32 @@ function formatNumber(value: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
+}
+
+function formatShanghaiDate(timestamp: number): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date(timestamp));
+  const values = Object.fromEntries(
+    parts.map((part) => [part.type, part.value]),
+  );
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+function calculateMA(
+  values: readonly number[],
+  window: number,
+): (number | null)[] {
+  let sum = 0;
+
+  return values.map((value, index) => {
+    sum += value;
+    if (index >= window) sum -= values[index - window];
+    return index >= window - 1 ? sum / window : null;
+  });
 }
 
 function formatChange(value: number, suffix = ""): string {
@@ -52,7 +82,12 @@ export default async function StockDetail({
       throw new HithinkError(`未找到 A 股股票（${thscode}）。`, "STOCK_NOT_FOUND");
     }
 
-    const snapshots = await getStockSnapshots([ticker.thscode]);
+    const end = Date.now();
+    const start = end - 400 * DAY_MS;
+    const [snapshots, history] = await Promise.all([
+      getStockSnapshots([ticker.thscode]),
+      getForwardAdjustedDailyHistory(ticker.thscode, start, end),
+    ]);
     const snapshot = snapshots.item.find(
       (item) => item.thscode === ticker.thscode,
     );
@@ -76,6 +111,25 @@ export default async function StockDetail({
         "INVALID_STOCK_DETAIL_SNAPSHOT",
       );
     }
+
+    const bars = [...history.item]
+      .sort((a, b) => a.date_ms - b.date_ms)
+      .slice(-250);
+    const dates = bars.map((bar) => formatShanghaiDate(bar.date_ms));
+    const candles = bars.map(
+      (bar) =>
+        [bar.open_price, bar.close_price, bar.low_price, bar.high_price] as [
+          number,
+          number,
+          number,
+          number,
+        ],
+    );
+    const volumes = bars.map((bar) => bar.volume);
+    const closes = bars.map((bar) => bar.close_price);
+    const ma20 = calculateMA(closes, 20);
+    const ma60 = calculateMA(closes, 60);
+    const ma120 = calculateMA(closes, 120);
 
     return (
       <main>
@@ -129,9 +183,29 @@ export default async function StockDetail({
             <strong>{formatNumber(snapshot.turnover / 100_000_000)} 亿</strong>
           </div>
         </section>
-        <p className="scope-note stock-scope-note">
-          最新行情快照，仅反映当前行情状态；历史走势将在后续研究页面提供。
-        </p>
+        <section
+          className="stock-history-section"
+          aria-labelledby="stock-history-title"
+        >
+          <div className="section-heading">
+            <h2 id="stock-history-title">前复权日线</h2>
+            <span className="label">最近 {bars.length} 个交易日</span>
+          </div>
+          <p className="scope-note">
+            历史数据时间 {formatShanghaiTime(history.timestamp)}
+          </p>
+          <StockKlineChart
+            dates={dates}
+            candles={candles}
+            volumes={volumes}
+            ma20={ma20}
+            ma60={ma60}
+            ma120={ma120}
+          />
+          <p className="scope-note">
+            前复权 · 日线。MA20/60/120 均按前复权收盘价计算。
+          </p>
+        </section>
         <footer>数据仅供个人研究，不构成投资建议。</footer>
       </main>
     );

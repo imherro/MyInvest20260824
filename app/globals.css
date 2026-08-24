@@ -350,8 +350,14 @@ h1 {
   font-variant-numeric: tabular-nums;
 }
 
-.stock-scope-note {
-  margin-top: 14px;
+.stock-history-section {
+  margin-top: 32px;
+}
+
+.stock-chart {
+  width: 100%;
+  height: 520px;
+  margin-top: 10px;
 }
 
 .scope-note {
@@ -422,6 +428,10 @@ footer {
 
   .stock-fact {
     padding: 16px;
+  }
+
+  .stock-chart {
+    height: 440px;
   }
 
   .breadth-grid {
