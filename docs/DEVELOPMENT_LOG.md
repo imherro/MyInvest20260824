@@ -328,3 +328,9 @@ The homepage now derives today's Shanghai calendar date and compares it with the
 - `npm test`: all four tests passed with the previously accepted module warning unchanged. `npm run build`: passed; all data routes remain dynamically server-rendered.
 - The production service was restarted on `0.0.0.0:8030`. The public home, industry, and stock URLs each returned HTTP 200 with real content. The live industry page showed 其他养殖 (`884277.TI`), its breadth, and three current constituents; the stock page showed 天山生物 (`300313.SZ`). No Cloudflare configuration change was needed.
 - Public HTML contained neither `X-api-key` nor the upstream host. Tracked application files contained no API secret, no mock/fallback data was introduced, and the ignored private watchlist was not read or transmitted.
+
+## 2026-08-24 — Task 8 final review and V1 freeze
+
+ChatGPT used GitHub to compare `749f0c399a873741a21950be026b13e1bea4b4a1..01f5c7605e812ae9a55f6203ffa11e51e2229553` and formally passed Task 8. The review confirmed the strict four-file diff, Shanghai date calculation independent of server timezone, unchanged source timestamp boundaries, minimal Server Component loading UI, README consistency with port 8030, append-only development history, and server-only secret boundary.
+
+Final disposition: V1 passed and is formally frozen at `01f5c7605e812ae9a55f6203ffa11e51e2229553`. Mandatory fixes: 0. High: 0; Medium: 0; Low: 0. No further development task or optional optimization was assigned.
