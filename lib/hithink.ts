@@ -60,7 +60,7 @@ export type StockSnapshot = {
 };
 
 export type StockSnapshots = {
-  timestamp: number;
+  timestamp: number | null;
   item: StockSnapshot[];
 };
 
@@ -240,7 +240,7 @@ export async function getStockSnapshots(
   );
 
   if (
-    !Number.isFinite(snapshots.timestamp) ||
+    (snapshots.timestamp !== null && !Number.isFinite(snapshots.timestamp)) ||
     !Array.isArray(snapshots.item) ||
     !snapshots.item.every(
       (item) =>

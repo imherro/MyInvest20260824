@@ -134,7 +134,10 @@ export default async function IndustryDetail({
             行业指数时间 {formatShanghaiTime(indexSnapshots.timestamp)}
           </span>
           <span className="label">
-            成分股行情时间 {formatShanghaiTime(stockSnapshots.timestamp)}
+            成分股行情时间{" "}
+            {stockSnapshots.timestamp === null
+              ? "接口未提供（显式代码模式）"
+              : formatShanghaiTime(stockSnapshots.timestamp)}
           </span>
         </section>
         <section className="breadth-grid" aria-label="成分股涨跌分布">

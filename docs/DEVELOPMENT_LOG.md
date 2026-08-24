@@ -204,3 +204,11 @@ The current-constituent list is authoritative. An empty list, a missing industry
 During Task 4 the user required the web service to listen on `0.0.0.0:8030` for an existing Cloudflare tunnel at <https://invest0830.okbbc.com>. This explicit user requirement overrides the original five-file Task 4 diff expectation, so `package.json` is the sixth changed file. Both `npm run dev` and `npm start` now use that host and port; no Cloudflare package, framework, or project configuration was added.
 
 The listener was verified on `0.0.0.0:8030`. The external industry-detail URL returned HTTP 200 with the real industry and constituent content, while its HTML contained neither the API header name nor the upstream host.
+
+## 2026-08-24 — Task 4 GitHub review repair
+
+ChatGPT's GitHub review found one medium contract mismatch: the official A-share snapshot contract permits `data.timestamp` to be null in explicit `thscodes` mode. The live Task 4 response returned a finite timestamp, but the implementation must not depend on that observed behavior when the documented null value is also valid.
+
+`StockSnapshots.timestamp` now accepts `number | null`. The data function accepts null or a finite number while still rejecting undefined, strings, `NaN`, and infinity. When the timestamp is null, the industry page keeps all real constituent data visible and labels the stock time as “接口未提供（显式代码模式）”; it does not substitute the current time, index time, or constituent time.
+
+Repair verification covered both valid branches and invalid values. The current live API still returned a finite timestamp and the page displayed its real Asia/Shanghai time. A temporary null injection kept all three real constituents and breadth data visible while showing the explicit unavailable label. Temporary `NaN`, string, and undefined injections each produced `INVALID_STOCK_SNAPSHOTS`. Every injection was removed before the final build and commit.
