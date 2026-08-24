@@ -183,10 +183,10 @@ export default async function Home() {
           <div className="watchlist-table-wrapper">
             <table className="watchlist-table">
               <thead><tr><th scope="col">排名</th><th scope="col">标的</th><th scope="col">最新价</th><th scope="col">涨跌幅</th><th className="watchlist-turnover" scope="col">成交额（亿）</th><th scope="col">状态 / 时间</th></tr></thead>
-              <tbody>{sortedRows.map((row, index) => <tr key={row.code}><td className="watchlist-rank">{index + 1}</td><td className="watchlist-name">{row.market === "CN" && row.assetType === "a-share" ? <Link className="stock-link" href={`/stock/${row.code}`}>{row.name}</Link> : <strong>{row.name}</strong>}<span className="label">{row.code} · {assetLabel(row)}</span></td><td>{row.status === "ok" ? formatNumber(row.lastPrice!) : "—"}</td><td className={row.status === "ok" ? changeClass(row.changePct!) : "neutral"}>{row.status === "ok" ? formatChange(row.changePct!) : "—"}</td><td className="watchlist-turnover">{row.status === "ok" ? formatNumber(row.turnover! / 100_000_000) : "—"}</td><td className={`watchlist-status ${row.status}`}>{statusText(row)}</td></tr>)}</tbody>
+              <tbody>{sortedRows.map((row, index) => <tr key={row.code}><td className="watchlist-rank">{index + 1}</td><td className="watchlist-name">{row.market === "CN" && row.assetType === "a-share" ? <Link className="stock-link" href={`/stock/${row.code}`}>{row.name}</Link> : row.market === "CN" && row.assetType === "fund-etf" ? <Link className="stock-link" href={`/etf/${row.code}`}>{row.name}</Link> : <strong>{row.name}</strong>}<span className="label">{row.code} · {assetLabel(row)}</span></td><td>{row.status === "ok" ? formatNumber(row.lastPrice!) : "—"}</td><td className={row.status === "ok" ? changeClass(row.changePct!) : "neutral"}>{row.status === "ok" ? formatChange(row.changePct!) : "—"}</td><td className="watchlist-turnover">{row.status === "ok" ? formatNumber(row.turnover! / 100_000_000) : "—"}</td><td className={`watchlist-status ${row.status}`}>{statusText(row)}</td></tr>)}</tbody>
             </table>
           </div>
-          <p className="scope-note">行情为各接口最新可用快照；是否属于当前自然日以行内行情时间为准。ETF 当前仅展示最新行情，详情页尚未加入。</p>
+          <p className="scope-note">行情为各接口最新可用快照；是否属于当前自然日以行内行情时间为准。</p>
         </section>
         <footer>数据仅供个人研究，不构成投资建议。</footer>
       </main>

@@ -10,6 +10,7 @@ type StockKlineChartProps = {
   ma20: (number | null)[];
   ma60: (number | null)[];
   ma120: (number | null)[];
+  ariaLabel?: string;
 };
 
 export default function StockKlineChart({
@@ -19,6 +20,7 @@ export default function StockKlineChart({
   ma20,
   ma60,
   ma120,
+  ariaLabel = "前复权日 K、MA20、MA60、MA120 与成交量图表",
 }: StockKlineChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -142,7 +144,7 @@ export default function StockKlineChart({
       ref={containerRef}
       className="stock-chart"
       role="img"
-      aria-label="前复权日 K、MA20、MA60、MA120 与成交量图表"
+      aria-label={ariaLabel}
     />
   );
 }

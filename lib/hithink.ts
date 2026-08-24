@@ -90,12 +90,34 @@ export type FundMarketSnapshotItem = {
   last_price: number;
   price_change: number;
   price_change_ratio_pct: number;
+  open_price: number;
+  high_price: number;
+  low_price: number;
+  prev_price: number;
+  volume: number;
   turnover: number;
 };
 
 export type FundMarketSnapshot = {
   timestamp: number;
   item: FundMarketSnapshotItem[];
+};
+
+export type FundDailyBar = {
+  date_ms: number;
+  open_price: number;
+  high_price: number;
+  low_price: number;
+  close_price: number;
+  volume: number;
+  turnover: number;
+};
+
+export type FundDailyHistory = {
+  timestamp: number;
+  thscode: string;
+  interval: string;
+  item: FundDailyBar[];
 };
 
 export type AShareTicker = {
@@ -329,6 +351,49 @@ export async function getFundMarketSnapshot(
   }
 
   return snapshot;
+}
+
+export async function getFundDailyHistory(
+  thscode: string,
+  start: number,
+  end: number,
+): Promise<FundDailyHistory> {
+  const params = new URLSearchParams({
+    thscode,
+    interval: "1d",
+    start: String(start),
+    end: String(end),
+  });
+  const history = await hithinkFetch<FundDailyHistory>(
+    `/api/fund/market/historical?${params}`,
+  );
+
+  if (
+    !Number.isFinite(history.timestamp) ||
+    typeof history.thscode !== "string" ||
+    history.thscode.trim() === "" ||
+    history.thscode !== thscode ||
+    history.interval !== "1d" ||
+    !Array.isArray(history.item) ||
+    !history.item.every(
+      (item) =>
+        Number.isFinite(item.date_ms) &&
+        Number.isFinite(item.open_price) &&
+        Number.isFinite(item.high_price) &&
+        Number.isFinite(item.low_price) &&
+        Number.isFinite(item.close_price) &&
+        Number.isFinite(item.volume) &&
+        Number.isFinite(item.turnover),
+    )
+  ) {
+    throw new HithinkError("ETF 历史行情响应格式不正确。", "INVALID_FUND_HISTORY");
+  }
+
+  if (history.item.length === 0) {
+    throw new HithinkError("ETF 历史行情暂无数据。", "EMPTY_FUND_HISTORY");
+  }
+
+  return history;
 }
 
 export async function getForwardAdjustedDailyHistory(
