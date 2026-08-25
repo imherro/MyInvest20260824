@@ -1,6 +1,13 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  ChangeEvent,
+  FormEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 type AssetType = "a-share" | "fund-etf";
 
@@ -13,6 +20,12 @@ type ResearchNote = {
   observation: string;
   plan: string;
   risk: string;
+};
+
+type ResearchBackup = {
+  version: 1;
+  exportedAt: number;
+  notes: ResearchNote[];
 };
 
 type Props = {
@@ -56,6 +69,19 @@ function isResearchNote(value: unknown): value is ResearchNote {
   );
 }
 
+function isResearchBackup(value: unknown): value is ResearchBackup {
+  if (!value || typeof value !== "object") return false;
+
+  const backup = value as Record<string, unknown>;
+  return (
+    backup.version === 1 &&
+    typeof backup.exportedAt === "number" &&
+    Number.isFinite(backup.exportedAt) &&
+    Array.isArray(backup.notes) &&
+    backup.notes.every(isResearchNote)
+  );
+}
+
 function formatShanghaiTime(timestamp: number): string {
   const values = Object.fromEntries(
     new Intl.DateTimeFormat("en-CA", {
@@ -82,6 +108,8 @@ export default function ResearchNotes({ assetCode, assetType }: Props) {
   const [notes, setNotes] = useState<ResearchNote[]>([]);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [unreadable, setUnreadable] = useState(false);
+  const [restoreError, setRestoreError] = useState(false);
+  const restoreInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -139,7 +167,7 @@ export default function ResearchNotes({ assetCode, assetType }: Props) {
   }
 
   function exportNotes() {
-    const backup = {
+    const backup: ResearchBackup = {
       version: 1,
       exportedAt: Date.now(),
       notes,
@@ -157,19 +185,66 @@ export default function ResearchNotes({ assetCode, assetType }: Props) {
     window.setTimeout(() => URL.revokeObjectURL(url), 0);
   }
 
+  async function restoreNotes(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    input.value = "";
+    if (!file) return;
+
+    let backup: ResearchBackup;
+    try {
+      const parsed: unknown = JSON.parse(await file.text());
+      if (!isResearchBackup(parsed)) throw new Error("Invalid research backup");
+      backup = parsed;
+    } catch {
+      setRestoreError(true);
+      return;
+    }
+
+    setRestoreError(false);
+    if (!window.confirm("导入将用备份中的全部研究记录替换当前记录，确定继续？")) {
+      return;
+    }
+
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(backup.notes));
+    setNotes(backup.notes);
+    setUnreadable(false);
+  }
+
   return (
     <section className="research-notes" aria-labelledby="research-notes-title">
       <div className="section-heading">
         <h2 id="research-notes-title">个人研究记录</h2>
-        <button
-          className="research-notes-export"
-          disabled={unreadable || notes.length === 0}
-          onClick={exportNotes}
-          type="button"
-        >
-          导出全部记录
-        </button>
+        <div className="research-notes-actions">
+          <button
+            className="research-notes-export"
+            disabled={unreadable || notes.length === 0}
+            onClick={exportNotes}
+            type="button"
+          >
+            导出全部记录
+          </button>
+          <button
+            className="research-notes-restore"
+            onClick={() => restoreInputRef.current?.click()}
+            type="button"
+          >
+            从备份恢复
+          </button>
+          <input
+            accept="application/json,.json"
+            className="research-notes-file-input"
+            onChange={restoreNotes}
+            ref={restoreInputRef}
+            type="file"
+          />
+        </div>
       </div>
+      {restoreError ? (
+        <p className="research-note-error" role="alert">
+          备份文件无效
+        </p>
+      ) : null}
       {unreadable ? (
         <p className="research-note-error" role="alert">
           研究记录暂不可读取

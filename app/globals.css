@@ -618,7 +618,14 @@ h1 {
   opacity: 0.45;
 }
 
-.research-notes-export {
+.research-notes-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.research-notes-export,
+.research-notes-restore {
   border: 1px solid #cbd3dc;
   border-radius: 8px;
   padding: 7px 10px;
@@ -627,6 +634,10 @@ h1 {
   font: inherit;
   font-size: 0.84rem;
   cursor: pointer;
+}
+
+.research-notes-file-input {
+  display: none;
 }
 
 .research-notes-export:disabled {
