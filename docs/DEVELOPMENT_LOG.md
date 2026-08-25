@@ -1,5 +1,13 @@
 # Development Log
 
+## 2026-08-25 — V4 Final Review / Freeze
+
+V4 在 `a40d6b5f820049d5fb7b17c186125b2af7073834` 的业务实现基础上完成冻结：研究记录以 DuckDB 为服务器唯一事实源，通过单个 Next Node 进程的 `GET / POST / DELETE` 接口跨浏览器、设备、localhost、局域网和公网地址共享；服务重启后数据持久。JSON 导出保留当前服务器记录，整体恢复在一个数据库事务中完成。`/research` 只浏览全部记录并链接回 A股/ETF 详情，首页保留自选、市场/行业、研究记录三个一级概念。
+
+生产数据库固定为 `.local/research-notes.duckdb`，开发数据库固定为 `.local/research-notes.dev.duckdb`，均由 `.local/` 忽略而不进入 Git。当前 DuckDB 按单 Node 进程运行：Windows 下生产服务持有数据库文件时，并行执行 `next build` 可能因文件锁失败。当前部署流程为停止生产进程 → `npm run build` → 重新启动；该限制不影响数据库重启持久化，不作为本版本修复项。
+
+V4 明确不包含登录、RBAC、审计、ORM、迁移框架、云数据库、多实例部署、实时同步、搜索、筛选、标签或复杂导航；旧 `myinvest.researchNotes.v1` localStorage 不自动迁移、不读取、不删除。
+
 ## 2026-08-25 — V4 Task 2 最小研究频道与一级导航
 
 新增 `/research` 作为纯浏览的共享研究记录频道。它在 Server Component 中直接读取 DuckDB 的 `listResearchNotes()`，按已有创建时间倒序展示全部记录，并按资产类型链接到 A股或 ETF 详情；不重复实现新增、删除、编辑、导入、导出、搜索、过滤、分组或标签。
