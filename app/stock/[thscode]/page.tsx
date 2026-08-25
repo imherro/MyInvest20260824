@@ -135,7 +135,7 @@ export default async function StockDetail({
     const ma120 = calculateMovingAverage(closes, 120);
 
     return (
-      <main>
+      <main className="asset-detail-page">
         <Link className="back-link" href="/">
           ← 返回首页
         </Link>
@@ -248,7 +248,7 @@ export default async function StockDetail({
         : new HithinkError("同花顺金融数据服务请求失败。", "UNKNOWN_ERROR");
 
     return (
-      <main>
+      <main className="asset-detail-page">
         <Link className="back-link" href="/">
           ← 返回首页
         </Link>

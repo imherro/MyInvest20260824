@@ -136,7 +136,7 @@ export default async function EtfDetail({
     const closes = bars.map((bar) => bar.close_price);
 
     return (
-      <main>
+      <main className="asset-detail-page">
         <Link className="back-link" href="/">
           ← 返回首页
         </Link>
@@ -195,7 +195,7 @@ export default async function EtfDetail({
         ? error
         : new HithinkError("同花顺金融数据服务请求失败。", "UNKNOWN_ERROR");
     return (
-      <main>
+      <main className="asset-detail-page">
         <Link className="back-link" href="/">← 返回首页</Link>
         <section className="panel error" role="alert">
           <h1 className="error-title">ETF 数据暂不可用</h1>
