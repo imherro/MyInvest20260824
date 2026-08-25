@@ -27,6 +27,11 @@ main {
   width: min(1180px, calc(100% - 48px));
 }
 
+.market-page,
+.industry-detail-page {
+  width: min(1180px, calc(100% - 48px));
+}
+
 .watchlist-header {
   display: flex;
   align-items: flex-start;
@@ -753,6 +758,11 @@ footer {
 
 @media (max-width: 560px) {
   .watchlist-page {
+    width: min(680px, calc(100% - 32px));
+  }
+
+  .market-page,
+  .industry-detail-page {
     width: min(680px, calc(100% - 32px));
   }
 

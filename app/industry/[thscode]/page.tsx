@@ -113,7 +113,7 @@ export default async function IndustryDetail({
     const advanceRatio = (advance / stocks.length) * 100;
 
     return (
-      <main>
+      <main className="industry-detail-page">
         <Link className="back-link" href="/market">
           ← 返回市场
         </Link>
@@ -210,7 +210,7 @@ export default async function IndustryDetail({
         : new HithinkError("同花顺金融数据服务请求失败。", "UNKNOWN_ERROR");
 
     return (
-      <main>
+      <main className="industry-detail-page">
         <Link className="back-link" href="/market">
           ← 返回市场
         </Link>
