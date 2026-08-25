@@ -1,5 +1,18 @@
 # Development Log
 
+## 2026-08-25 — V3 Final Review / Freeze
+
+- Freeze base: `d7ffd8ef19f8edf2842ee926739a73aeca31ce00`
+- Frozen V3 closure: 首页发现标的 → A股/ETF 详情页研究 → 四段式本地记录（为何关注、观察点、计划、风险点）→ 按资产回看时间线 → 追加或删除记录 → JSON 全量导出 → JSON 整体恢复。
+- 记录固定保存在浏览器 `myinvest.researchNotes.v1`；笔记不经过网络或服务端，不进入公开 HTML、URL、日志或 Git。导入只接受版本 1 的完整备份包，确认后整体替换，不做合并或去重。
+- V3 明确不包含编辑、标签/搜索、AI/新闻/评分/交易信号、云同步、DuckDB、服务端笔记接口、登录或数据迁移。
+
+### Final regression
+
+- `npm test`（12 项）、`npm run build` 与 `git diff --check` 通过；`/`、`/market`、`/stock/600350.SH` 本地及公网基础可用性回归通过。
+- V2 首页行为未改动；package 与 package-lock 未变化；`.local/watchlist.csv` 仍不进 Git。服务端 HTML 不含 API key、`X-api-key`、`fuyao.aicubes.cn` 或浏览器本地笔记正文。
+- ETF 上游仍可能返回既有不支持/未找到状态，冻结不伪造数据。Task 5 的真实浏览器覆盖恢复测试仍受内置浏览器隔离环境无法访问本机临时服务所限，未把该限制表述为已完成的真实用户数据测试。
+
 ## 2026-08-25 — V3 Task 5 恢复本地研究记录备份
 
 研究记录标题区域在导出按钮旁增加“从备份恢复”。用户选择 JSON 后，页面只接受 `{ version: 1, exportedAt, notes }` 的完整备份包：版本必须为 1，导出时间必须为有限数字，且每条记录必须符合现有研究记录结构。任一项不符就显示“备份文件无效”，不写入 localStorage，也不改动当前时间线。
