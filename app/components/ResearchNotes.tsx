@@ -33,8 +33,6 @@ type Props = {
   assetType: AssetType;
 };
 
-const STORAGE_KEY = "myinvest.researchNotes.v1";
-
 const fields = [
   { key: "reason", label: "为何关注" },
   { key: "observation", label: "观察点" },
@@ -99,31 +97,45 @@ function formatShanghaiTime(timestamp: number): string {
   return `${values.year}-${values.month}-${values.day} ${values.hour}:${values.minute}`;
 }
 
-function createId(): string {
-  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
-  return `note-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-}
-
 export default function ResearchNotes({ assetCode, assetType }: Props) {
   const [notes, setNotes] = useState<ResearchNote[]>([]);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [unreadable, setUnreadable] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [actionError, setActionError] = useState("");
   const [restoreError, setRestoreError] = useState(false);
   const restoreInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (!stored) return;
+    let cancelled = false;
 
-    try {
-      const parsed: unknown = JSON.parse(stored);
-      if (!Array.isArray(parsed) || !parsed.every(isResearchNote)) {
-        throw new Error("Invalid research notes");
+    async function loadNotes() {
+      try {
+        const response = await fetch("/api/research-notes", { cache: "no-store" });
+        const payload: unknown = await response.json();
+        const loadedNotes =
+          payload && typeof payload === "object"
+            ? (payload as { notes?: unknown }).notes
+            : undefined;
+        if (!response.ok || !Array.isArray(loadedNotes) || !loadedNotes.every(isResearchNote)) {
+          throw new Error("Invalid research notes response");
+        }
+
+        if (!cancelled) {
+          setNotes(loadedNotes);
+          setUnreadable(false);
+        }
+      } catch {
+        if (!cancelled) setUnreadable(true);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      setNotes(parsed);
-    } catch {
-      setUnreadable(true);
     }
+
+    void loadNotes();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const assetNotes = useMemo(
@@ -136,34 +148,53 @@ export default function ResearchNotes({ assetCode, assetType }: Props) {
         .sort((a, b) => b.createdAt - a.createdAt),
     [assetCode, assetType, notes],
   );
-  const canSave = !unreadable && fields.some(({ key }) => draft[key].trim());
+  const canSave =
+    !loading && !unreadable && fields.some(({ key }) => draft[key].trim());
 
-  function saveNote(event: FormEvent<HTMLFormElement>) {
+  async function saveNote(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canSave) return;
 
-    const note: ResearchNote = {
-      id: createId(),
-      assetCode,
-      assetType,
-      createdAt: Date.now(),
-      reason: draft.reason.trim(),
-      observation: draft.observation.trim(),
-      plan: draft.plan.trim(),
-      risk: draft.risk.trim(),
-    };
-    const nextNotes = [...notes, note];
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextNotes));
-    setNotes(nextNotes);
+    setActionError("");
+    const response = await fetch("/api/research-notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        assetCode,
+        assetType,
+        reason: draft.reason.trim(),
+        observation: draft.observation.trim(),
+        plan: draft.plan.trim(),
+        risk: draft.risk.trim(),
+      }),
+    }).catch(() => undefined);
+    const payload: unknown = await response?.json().catch(() => undefined);
+    const note =
+      payload && typeof payload === "object"
+        ? (payload as { note?: unknown }).note
+        : undefined;
+    if (!response?.ok || !isResearchNote(note)) {
+      setActionError("研究记录暂不可保存");
+      return;
+    }
+
+    setNotes((current) => [note, ...current]);
     setDraft(emptyDraft());
   }
 
-  function deleteNote(id: string) {
+  async function deleteNote(id: string) {
     if (!window.confirm("确定删除这条研究记录？")) return;
 
-    const nextNotes = notes.filter((note) => note.id !== id);
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextNotes));
-    setNotes(nextNotes);
+    setActionError("");
+    const response = await fetch(`/api/research-notes?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    }).catch(() => undefined);
+    if (!response?.ok) {
+      setActionError("研究记录暂不可删除");
+      return;
+    }
+
+    setNotes((current) => current.filter((note) => note.id !== id));
   }
 
   function exportNotes() {
@@ -206,8 +237,23 @@ export default function ResearchNotes({ assetCode, assetType }: Props) {
       return;
     }
 
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(backup.notes));
-    setNotes(backup.notes);
+    setActionError("");
+    const response = await fetch("/api/research-notes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "replace-all", notes: backup.notes }),
+    }).catch(() => undefined);
+    const payload: unknown = await response?.json().catch(() => undefined);
+    const restoredNotes =
+      payload && typeof payload === "object"
+        ? (payload as { notes?: unknown }).notes
+        : undefined;
+    if (!response?.ok || !Array.isArray(restoredNotes) || !restoredNotes.every(isResearchNote)) {
+      setActionError("研究记录暂不可恢复");
+      return;
+    }
+
+    setNotes(restoredNotes);
     setUnreadable(false);
   }
 
@@ -218,7 +264,7 @@ export default function ResearchNotes({ assetCode, assetType }: Props) {
         <div className="research-notes-actions">
           <button
             className="research-notes-export"
-            disabled={unreadable || notes.length === 0}
+            disabled={loading || unreadable || notes.length === 0}
             onClick={exportNotes}
             type="button"
           >
@@ -243,6 +289,11 @@ export default function ResearchNotes({ assetCode, assetType }: Props) {
       {restoreError ? (
         <p className="research-note-error" role="alert">
           备份文件无效
+        </p>
+      ) : null}
+      {actionError ? (
+        <p className="research-note-error" role="alert">
+          {actionError}
         </p>
       ) : null}
       {unreadable ? (

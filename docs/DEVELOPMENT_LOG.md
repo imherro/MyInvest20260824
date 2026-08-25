@@ -1,5 +1,11 @@
 # Development Log
 
+## 2026-08-25 — V4 Task 1 DuckDB 服务器共享研究记录
+
+V3 继续冻结。V4 Task 1 将研究记录的唯一事实源从浏览器本地存储切换为 Next.js 单进程服务中的 DuckDB 文件：开发环境使用 `.local/research-notes.dev.duckdb`，生产环境使用 `.local/research-notes.duckdb`。同一部署下，不同浏览器、设备、localhost、局域网和公网入口都通过同一组 `GET /api/research-notes`、`POST /api/research-notes` 与 `DELETE /api/research-notes?id=...` 读取和修改记录。
+
+普通新增由服务器生成记录 ID 和创建时间；JSON 备份恢复继续采用全量替换，并在一个数据库事务中完成。旧 `myinvest.researchNotes.v1` localStorage 不自动迁移、不删除、不读取、不上传；已有浏览器本地内容保持原样但不再出现在新版时间线。当前部署无身份认证，因此能访问网站的人也可读取、新增、删除或整体恢复研究记录，这是本个人测试项目明确接受的边界。
+
 ## 2026-08-25 — Post-V3 Repair 1 市场/行业页桌面宽度修复
 
 V3 保持冻结。本提交修复冻结后发现的既有布局遗漏：市场页与行业详情页此前仍使用全局 680px 容器，使桌面成分股表和行业列表呈现窄版。两个页面的正常与错误状态现在各自标记范围 class，在大于 560px 时使用与首页、A 股/ETF 详情页一致的最大 1180px 容器；560px 及以下回到既有手机边距。
