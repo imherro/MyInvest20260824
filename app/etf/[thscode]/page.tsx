@@ -11,6 +11,7 @@ import {
   calculateMovingAverage,
 } from "../../../lib/stock-metrics";
 import { readWatchlist } from "../../../lib/watchlist";
+import ResearchNotes from "../../components/ResearchNotes";
 import StockKlineChart from "../../stock/[thscode]/StockKlineChart";
 
 export const dynamic = "force-dynamic";
@@ -172,6 +173,7 @@ export default async function EtfDetail({
           </div>
           <p className="scope-note">最大回撤按最近60个交易日收盘价计算；平均成交额按最近20个交易日计算。</p>
         </section>
+        <ResearchNotes assetCode={entry.code} assetType="fund-etf" />
         <section className="stock-history-section" aria-labelledby="etf-history-title">
           <div className="section-heading"><h2 id="etf-history-title">ETF 日线</h2><span className="label">最近 {bars.length} 个交易日</span></div>
           <p className="scope-note">历史数据时间 {formatShanghaiTime(history.timestamp)}</p>

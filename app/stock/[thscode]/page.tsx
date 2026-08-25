@@ -11,6 +11,7 @@ import {
   calculateMaxDrawdown,
   calculateMovingAverage,
 } from "../../../lib/stock-metrics";
+import ResearchNotes from "../../components/ResearchNotes";
 import StockKlineChart from "./StockKlineChart";
 
 export const dynamic = "force-dynamic";
@@ -215,6 +216,7 @@ export default async function StockDetail({
             最大回撤按最近60个交易日前复权收盘价计算；平均成交额按最近20个交易日计算。
           </p>
         </section>
+        <ResearchNotes assetCode={ticker.thscode} assetType="a-share" />
         <section
           className="stock-history-section"
           aria-labelledby="stock-history-title"

@@ -564,6 +564,96 @@ h1 {
   margin-top: 32px;
 }
 
+.research-notes {
+  margin-top: 32px;
+}
+
+.research-note-form,
+.research-note-timeline {
+  display: grid;
+  gap: 12px;
+}
+
+.research-note-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.research-note-field {
+  display: grid;
+  gap: 7px;
+  padding: 20px;
+  border: 1px solid #dce2e8;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.research-note-field textarea {
+  width: 100%;
+  min-height: 96px;
+  resize: vertical;
+  border: 1px solid #cbd3dc;
+  border-radius: 8px;
+  padding: 9px;
+  color: inherit;
+  font: inherit;
+  line-height: 1.5;
+}
+
+.research-note-save {
+  justify-self: start;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: #315d96;
+  color: #fff;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.research-note-save:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.research-timeline-heading {
+  margin-top: 28px;
+}
+
+.research-note-item,
+.research-note-error {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 20px;
+  border: 1px solid #dce2e8;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.research-note-error {
+  color: #6f3030;
+  border-color: #efc8c8;
+  background: #fffafa;
+}
+
+.research-note-content {
+  display: grid;
+  gap: 4px;
+}
+
+.research-note-content strong {
+  font-size: 0.9rem;
+}
+
+.research-note-content p {
+  margin: 0;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
 .stock-metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -755,6 +845,10 @@ footer {
 
   .stock-fact {
     padding: 16px;
+  }
+
+  .research-note-grid {
+    grid-template-columns: 1fr;
   }
 
   .stock-chart {
