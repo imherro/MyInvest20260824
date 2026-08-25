@@ -1,8 +1,12 @@
 import Link from "next/link";
 
 import {
+  getBalanceSheets,
   getAshareTicker,
+  getCashFlowStatements,
+  getFinancialIndicators,
   getForwardAdjustedDailyHistory,
+  getIncomeStatements,
   getStockSnapshots,
   HithinkError,
 } from "../../../lib/hithink";
@@ -54,6 +58,39 @@ function formatShanghaiDate(timestamp: number): string {
 function formatChange(value: number, suffix = ""): string {
   const sign = value > 0 ? "+" : "";
   return `${sign}${formatNumber(value)}${suffix}`;
+}
+
+function formatFinancialAmount(value: number | null): string {
+  if (value === null) return "—";
+
+  const absolute = Math.abs(value);
+  if (absolute >= 100_000_000) {
+    return `${formatNumber(value / 100_000_000)} 亿`;
+  }
+  if (absolute >= 10_000) {
+    return `${formatNumber(value / 10_000)} 万`;
+  }
+  return formatNumber(value);
+}
+
+function formatFinancialPercentage(value: string | null): string {
+  if (value === null) return "—";
+
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? `${formatNumber(numericValue)}%` : "—";
+}
+
+function getIndicatorValue(
+  abilities: Awaited<ReturnType<typeof getFinancialIndicators>>["abilities"],
+  indexId: string,
+): string | null {
+  for (const ability of abilities) {
+    const indicator = ability.indicators.find(
+      (item) => item.index_id === indexId,
+    );
+    if (indicator) return indicator.value;
+  }
+  return null;
 }
 
 function changeClass(value: number): string {
@@ -135,6 +172,86 @@ export default async function StockDetail({
     const ma60 = calculateMovingAverage(closes, 60);
     const ma120 = calculateMovingAverage(closes, 120);
 
+    let financialEvidence:
+      | {
+          latest: {
+            fiscalYear: number;
+            fiscalPeriod: string;
+            reportDateMs: number;
+            currency: string;
+            operatingIncome: number | null;
+            netProfit: number | null;
+            operatingCashFlow: number | null;
+            assetsTotal: number | null;
+            totalDebt: number | null;
+          };
+          indicators: Awaited<ReturnType<typeof getFinancialIndicators>>["abilities"];
+          rows: Array<{
+            periodEndMs: number;
+            fiscalYear: number;
+            fiscalPeriod: string;
+            operatingIncome: number | null;
+            netProfit: number | null;
+            operatingCashFlow: number | null;
+            assetsTotal: number | null;
+            totalDebt: number | null;
+          }>;
+        }
+      | undefined;
+    let financialError: HithinkError | undefined;
+
+    try {
+      const [incomeStatements, balanceSheets, cashFlowStatements] =
+        await Promise.all([
+          getIncomeStatements(ticker.thscode),
+          getBalanceSheets(ticker.thscode),
+          getCashFlowStatements(ticker.thscode),
+        ]);
+      const balanceByPeriod = new Map(
+        balanceSheets.item.map((item) => [item.period_end_ms, item]),
+      );
+      const cashFlowByPeriod = new Map(
+        cashFlowStatements.item.map((item) => [item.period_end_ms, item]),
+      );
+      const rows = incomeStatements.item
+        .map((income) => {
+          const balance = balanceByPeriod.get(income.period_end_ms);
+          const cashFlow = cashFlowByPeriod.get(income.period_end_ms);
+          if (!balance || !cashFlow) return null;
+          return {
+            periodEndMs: income.period_end_ms,
+            fiscalYear: income.fiscal_year,
+            fiscalPeriod: income.fiscal_period,
+            reportDateMs: income.report_date_ms,
+            currency: income.currency,
+            operatingIncome: income.operating_income,
+            netProfit: income.parent_holder_net_profit,
+            operatingCashFlow: cashFlow.act_cash_flow_net,
+            assetsTotal: balance.assets_total,
+            totalDebt: balance.total_debt,
+          };
+        })
+        .filter((row) => row !== null)
+        .sort((a, b) => b.periodEndMs - a.periodEndMs);
+
+      if (rows.length === 0) {
+        throw new HithinkError("三张财务报表没有可对齐的报告期。", "EMPTY_FINANCIAL_ALIGNMENT");
+      }
+
+      const latest = rows[0];
+      const quarter = latest.fiscalPeriod.replace(/^Q/, "");
+      const indicators = await getFinancialIndicators(
+        ticker.thscode,
+        `${latest.fiscalYear}-${quarter}`,
+      );
+      financialEvidence = { latest, indicators: indicators.abilities, rows };
+    } catch (error) {
+      financialError =
+        error instanceof HithinkError
+          ? error
+          : new HithinkError("财务数据请求失败。", "UNKNOWN_FINANCIAL_ERROR");
+    }
+
     return (
       <main className="asset-detail-page">
         <Link className="back-link" href="/">
@@ -215,6 +332,82 @@ export default async function StockDetail({
           <p className="scope-note">
             最大回撤按最近60个交易日前复权收盘价计算；平均成交额按最近20个交易日计算。
           </p>
+        </section>
+        <section
+          className="stock-history-section financial-health-section"
+          aria-labelledby="financial-health-title"
+        >
+          <div className="section-heading">
+            <div>
+              <h2 id="financial-health-title">财务体检</h2>
+              {financialEvidence ? (
+                <span className="label">
+                  {financialEvidence.latest.fiscalYear} {financialEvidence.latest.fiscalPeriod} · 披露 {formatShanghaiDate(financialEvidence.latest.reportDateMs)} · {financialEvidence.latest.currency}
+                </span>
+              ) : null}
+            </div>
+          </div>
+          {financialEvidence ? (
+            <>
+              <div className="financial-evidence-grid" aria-label="最新财务证据">
+                <section className="financial-evidence-card">
+                  <h3>增长</h3>
+                  <dl>
+                    <div><dt>营业收入</dt><dd>{formatFinancialAmount(financialEvidence.latest.operatingIncome)}</dd></div>
+                    <div><dt>营收同比增长率</dt><dd>{formatFinancialPercentage(getIndicatorValue(financialEvidence.indicators, "calculate_operating_income_yoy_growth_ratio"))}</dd></div>
+                    <div><dt>归母净利润</dt><dd>{formatFinancialAmount(financialEvidence.latest.netProfit)}</dd></div>
+                    <div><dt>归母净利润同比增长率</dt><dd>{formatFinancialPercentage(getIndicatorValue(financialEvidence.indicators, "calculate_parent_holder_net_profit_yoy_growth_ratio"))}</dd></div>
+                  </dl>
+                </section>
+                <section className="financial-evidence-card">
+                  <h3>盈利</h3>
+                  <dl>
+                    <div><dt>销售毛利率</dt><dd>{formatFinancialPercentage(getIndicatorValue(financialEvidence.indicators, "sale_gross_margin"))}</dd></div>
+                    <div><dt>加权平均净资产收益率</dt><dd>{formatFinancialPercentage(getIndicatorValue(financialEvidence.indicators, "index_weighted_avg_roe"))}</dd></div>
+                  </dl>
+                </section>
+                <section className="financial-evidence-card">
+                  <h3>现金流</h3>
+                  <dl>
+                    <div><dt>经营现金流净额</dt><dd>{formatFinancialAmount(financialEvidence.latest.operatingCashFlow)}</dd></div>
+                    <div><dt>净利润现金含量</dt><dd>{formatFinancialPercentage(getIndicatorValue(financialEvidence.indicators, "net_profit_cash_content"))}</dd></div>
+                  </dl>
+                </section>
+                <section className="financial-evidence-card">
+                  <h3>杠杆</h3>
+                  <dl>
+                    <div><dt>总资产</dt><dd>{formatFinancialAmount(financialEvidence.latest.assetsTotal)}</dd></div>
+                    <div><dt>总负债</dt><dd>{formatFinancialAmount(financialEvidence.latest.totalDebt)}</dd></div>
+                    <div><dt>资产负债率</dt><dd>{formatFinancialPercentage(getIndicatorValue(financialEvidence.indicators, "assets_debt_ratio"))}</dd></div>
+                  </dl>
+                </section>
+              </div>
+              <div className="financial-table-wrapper">
+                <table className="financial-table">
+                  <thead><tr><th>报告期</th><th>营收</th><th>归母净利润</th><th>经营现金流</th><th>总资产</th><th>总负债</th></tr></thead>
+                  <tbody>
+                    {financialEvidence.rows.map((row) => (
+                      <tr key={row.periodEndMs}>
+                        <th scope="row">{row.fiscalYear} {row.fiscalPeriod}</th>
+                        <td>{formatFinancialAmount(row.operatingIncome)}</td>
+                        <td>{formatFinancialAmount(row.netProfit)}</td>
+                        <td>{formatFinancialAmount(row.operatingCashFlow)}</td>
+                        <td>{formatFinancialAmount(row.assetsTotal)}</td>
+                        <td>{formatFinancialAmount(row.totalDebt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="scope-note">
+                数据源：同花顺金融数据 API。三张报表按报告期末对齐；按接口季度报告期原始口径展示，不将不同累计报告期直接解释为单季度环比；同比增长率仅使用财务指标接口已提供值。
+              </p>
+            </>
+          ) : (
+            <p className="scope-note financial-unavailable">
+              财务数据暂不可用{financialError?.code ? ` · ${financialError.code}` : ""}
+            </p>
+          )}
         </section>
         <ResearchNotes assetCode={ticker.thscode} assetType="a-share" />
         <section

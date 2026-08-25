@@ -763,6 +763,91 @@ h1 {
   gap: 12px;
 }
 
+.financial-evidence-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.financial-evidence-card {
+  padding: 20px;
+  border: 1px solid #dce2e8;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.financial-evidence-card h3 {
+  margin: 0 0 14px;
+  font-size: 1rem;
+}
+
+.financial-evidence-card dl {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.financial-evidence-card dl div {
+  display: grid;
+  gap: 4px;
+}
+
+.financial-evidence-card dt {
+  color: #6b7685;
+  font-size: 0.78rem;
+}
+
+.financial-evidence-card dd {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.financial-table-wrapper {
+  margin-top: 14px;
+  overflow-x: auto;
+  border: 1px solid #dce2e8;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.financial-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.financial-table th,
+.financial-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid #edf0f3;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.financial-table thead th {
+  color: #6b7685;
+  background: #f8f9fb;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.financial-table th:first-child,
+.financial-table tbody th {
+  text-align: left;
+}
+
+.financial-table tbody tr:last-child th,
+.financial-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.financial-unavailable {
+  color: #7b5b22;
+}
+
 .stock-chart {
   width: 100%;
   height: 520px;
@@ -801,6 +886,10 @@ footer {
 @media (max-width: 900px) {
   .asset-detail-page .stock-facts {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .financial-evidence-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -978,6 +1067,20 @@ footer {
 
   .stock-chart {
     height: 440px;
+  }
+
+  .financial-evidence-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .financial-evidence-card {
+    padding: 16px;
+  }
+
+  .financial-table th,
+  .financial-table td {
+    padding: 11px 12px;
+    font-size: 0.78rem;
   }
 
   .breadth-grid {
