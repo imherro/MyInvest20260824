@@ -138,10 +138,37 @@ export default function ResearchNotes({ assetCode, assetType }: Props) {
     setNotes(nextNotes);
   }
 
+  function exportNotes() {
+    const backup = {
+      version: 1,
+      exportedAt: Date.now(),
+      notes,
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `myinvest-research-notes-${formatShanghaiTime(backup.exportedAt).slice(0, 10)}.json`;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  }
+
   return (
     <section className="research-notes" aria-labelledby="research-notes-title">
       <div className="section-heading">
         <h2 id="research-notes-title">个人研究记录</h2>
+        <button
+          className="research-notes-export"
+          disabled={unreadable || notes.length === 0}
+          onClick={exportNotes}
+          type="button"
+        >
+          导出全部记录
+        </button>
       </div>
       {unreadable ? (
         <p className="research-note-error" role="alert">

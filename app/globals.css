@@ -618,6 +618,22 @@ h1 {
   opacity: 0.45;
 }
 
+.research-notes-export {
+  border: 1px solid #cbd3dc;
+  border-radius: 8px;
+  padding: 7px 10px;
+  background: #fff;
+  color: #49627f;
+  font: inherit;
+  font-size: 0.84rem;
+  cursor: pointer;
+}
+
+.research-notes-export:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
 .research-timeline-heading {
   margin-top: 28px;
 }
@@ -872,6 +888,11 @@ footer {
 
   .research-note-grid {
     grid-template-columns: 1fr;
+  }
+
+  .research-notes .section-heading {
+    flex-direction: row;
+    align-items: center;
   }
 
   .stock-chart {
