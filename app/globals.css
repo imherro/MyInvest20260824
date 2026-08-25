@@ -644,6 +644,29 @@ h1 {
   gap: 4px;
 }
 
+.research-note-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.research-note-delete {
+  border: 0;
+  padding: 2px 0;
+  background: transparent;
+  color: #6b7685;
+  font: inherit;
+  font-size: 0.82rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.research-note-delete:hover {
+  color: #315d96;
+}
+
 .research-note-content strong {
   font-size: 0.9rem;
 }

@@ -130,6 +130,14 @@ export default function ResearchNotes({ assetCode, assetType }: Props) {
     setDraft(emptyDraft());
   }
 
+  function deleteNote(id: string) {
+    if (!window.confirm("确定删除这条研究记录？")) return;
+
+    const nextNotes = notes.filter((note) => note.id !== id);
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextNotes));
+    setNotes(nextNotes);
+  }
+
   return (
     <section className="research-notes" aria-labelledby="research-notes-title">
       <div className="section-heading">
@@ -171,9 +179,18 @@ export default function ResearchNotes({ assetCode, assetType }: Props) {
         <div className="research-note-timeline">
           {assetNotes.map((note) => (
             <article className="research-note-item" key={note.id}>
-              <time className="label" dateTime={new Date(note.createdAt).toISOString()}>
-                {formatShanghaiTime(note.createdAt)}
-              </time>
+              <div className="research-note-meta">
+                <time className="label" dateTime={new Date(note.createdAt).toISOString()}>
+                  {formatShanghaiTime(note.createdAt)}
+                </time>
+                <button
+                  className="research-note-delete"
+                  onClick={() => deleteNote(note.id)}
+                  type="button"
+                >
+                  删除
+                </button>
+              </div>
               {fields.map(({ key, label }) =>
                 note[key] ? (
                   <div className="research-note-content" key={key}>
