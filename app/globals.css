@@ -140,6 +140,16 @@ main {
   white-space: nowrap;
 }
 
+.focus-name .focus-anomaly {
+  margin-top: 4px;
+  color: #596575;
+  font-size: 0.73rem;
+  line-height: 1.4;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
 .focus-mobile-position {
   display: none !important;
 }
@@ -978,6 +988,10 @@ footer {
   }
 
   .focus-name .focus-snapshot-time {
+    font-size: 0.62rem;
+  }
+
+  .focus-name .focus-anomaly {
     font-size: 0.62rem;
   }
 

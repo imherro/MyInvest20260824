@@ -4,8 +4,10 @@ import {
   getForwardAdjustedDailyHistory,
   getFundDailyHistory,
   getFundMarketSnapshot,
+  getStockAnomalyAnalysis,
   getStockSnapshots,
   HithinkError,
+  type StockAnomalyAnalysisItem,
 } from "../lib/hithink";
 import {
   calculateLatestToPreviousAverage,
@@ -35,6 +37,8 @@ type FocusRow = WatchlistRow & {
   historyDateMs: number | null;
   trend20: number[] | null;
   historyAvailable: boolean;
+  anomaly?: StockAnomalyAnalysisItem;
+  anomalyErrorCode?: string;
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -244,12 +248,25 @@ export default async function Home() {
       .slice(0, 5);
     const end = Date.now();
     const start = end - 60 * DAY_MS;
-    const focusHistoryResults = await Promise.allSettled(
-      focusCandidates.map((row) =>
-        row.assetType === "a-share"
-          ? getForwardAdjustedDailyHistory(row.code, start, end)
-          : getFundDailyHistory(row.code, start, end),
+    const focusAShareCodes = focusCandidates
+      .filter((row) => row.assetType === "a-share")
+      .map((row) => row.code);
+    const [focusHistoryResults, anomalyResult] = await Promise.all([
+      Promise.allSettled(
+        focusCandidates.map((row) =>
+          row.assetType === "a-share"
+            ? getForwardAdjustedDailyHistory(row.code, start, end)
+            : getFundDailyHistory(row.code, start, end),
+        ),
       ),
+      focusAShareCodes.length === 0
+        ? Promise.resolve({ data: null, error: null as unknown })
+        : getStockAnomalyAnalysis(focusAShareCodes)
+            .then((data) => ({ data, error: null as unknown }))
+            .catch((error: unknown) => ({ data: null, error })),
+    ]);
+    const anomaliesByCode = new Map(
+      anomalyResult.data?.item.map((item) => [item.thscode, item]) ?? [],
     );
     const focusRows: FocusRow[] = focusCandidates.map((row, index) => {
       const result = focusHistoryResults[index];
@@ -263,6 +280,10 @@ export default async function Home() {
           historyDateMs: null,
           trend20: null,
           historyAvailable: false,
+          anomaly: anomaliesByCode.get(row.code),
+          anomalyErrorCode: row.assetType === "a-share" && anomalyResult.error
+            ? errorCode(anomalyResult.error)
+            : undefined,
         };
       }
       const sortedBars = [...result.value.item].sort(
@@ -279,6 +300,10 @@ export default async function Home() {
         historyDateMs: sortedBars.at(-1)?.date_ms ?? null,
         trend20: closes.slice(-20),
         historyAvailable: true,
+        anomaly: anomaliesByCode.get(row.code),
+        anomalyErrorCode: row.assetType === "a-share" && anomalyResult.error
+          ? errorCode(anomalyResult.error)
+          : undefined,
       };
     });
 
@@ -302,12 +327,12 @@ export default async function Home() {
         </section>
         <section className="market-section" aria-labelledby="focus-title">
           <div className="section-heading">
-            <div><h2 id="focus-title">今日重点关注</h2><span className="label">按今日绝对涨跌幅选取前 {focusRows.length} 个有行情标的</span></div>
+            <div><h2 id="focus-title">今日重点关注</h2><span className="label">按今日绝对涨跌幅选取前 {focusRows.length} 个有行情标的{anomalyResult.data ? ` · 异动数据 ${formatShanghaiMonthDayTime(anomalyResult.data.timestamp)}` : ""}</span></div>
           </div>
           <div className="focus-table-wrapper">
             <table className="focus-table">
               <thead><tr><th scope="col">标的</th><th scope="col">最新</th><th scope="col">5日</th><th scope="col">20日</th><th scope="col" className="focus-turnover-header">成交额比</th><th scope="col" className="focus-range-position">20日位置</th></tr></thead>
-              <tbody>{focusRows.map((row) => <tr key={row.code}><td className="focus-name"><FocusName row={row} /><span className="label">{row.code} · {assetLabel(row)}</span></td><td className={changeClass(row.changePct!)}>{formatChange(row.changePct!)}</td><td className={row.historyAvailable && row.period5 !== null ? changeClass(row.period5) : "neutral"}>{row.historyAvailable ? row.period5 === null ? "数据不足" : formatChange(row.period5 * 100) : "历史暂不可用"}</td><td className={row.historyAvailable && row.period20 !== null ? changeClass(row.period20) : "neutral"}>{row.historyAvailable ? row.period20 === null ? "数据不足" : formatChange(row.period20 * 100) : "历史暂不可用"}</td><td className="focus-turnover-ratio">{row.historyAvailable ? row.turnoverRatio === null ? "数据不足" : `${formatNumber(row.turnoverRatio)}×` : "历史暂不可用"}</td><td className="focus-range-position">{row.historyAvailable ? row.rangePosition20 === null ? "数据不足" : formatPosition(row.rangePosition20) : "历史暂不可用"}</td></tr>)}</tbody>
+              <tbody>{focusRows.map((row) => <tr key={row.code}><td className="focus-name"><FocusName row={row} /><span className="label">{row.code} · {assetLabel(row)}</span>{row.assetType === "a-share" ? <span className="focus-anomaly">{row.anomalyErrorCode ? `异动原因暂不可用 · ${row.anomalyErrorCode}` : row.anomaly ? `异动：${row.anomaly.tag_name} · ${row.anomaly.analysis_content}` : "未返回异动原因"}</span> : null}</td><td className={changeClass(row.changePct!)}>{formatChange(row.changePct!)}</td><td className={row.historyAvailable && row.period5 !== null ? changeClass(row.period5) : "neutral"}>{row.historyAvailable ? row.period5 === null ? "数据不足" : formatChange(row.period5 * 100) : "历史暂不可用"}</td><td className={row.historyAvailable && row.period20 !== null ? changeClass(row.period20) : "neutral"}>{row.historyAvailable ? row.period20 === null ? "数据不足" : formatChange(row.period20 * 100) : "历史暂不可用"}</td><td className="focus-turnover-ratio">{row.historyAvailable ? row.turnoverRatio === null ? "数据不足" : `${formatNumber(row.turnoverRatio)}×` : "历史暂不可用"}</td><td className="focus-range-position">{row.historyAvailable ? row.rangePosition20 === null ? "数据不足" : formatPosition(row.rangePosition20) : "历史暂不可用"}</td></tr>)}</tbody>
             </table>
           </div>
           <p className="scope-note">按今日绝对涨跌幅选取前5个有行情标的；A股多日涨跌按前复权收盘价计算，ETF按交易所日线收盘价计算。成交额比 = 最近历史交易日成交额 ÷ 此前20个交易日平均成交额；这是历史日线比较，不代表盘中实时量比。“最新”为行情快照涨跌，行情时间见标的行；5日、20日、成交额比、20日位置和迷你走势均基于历史日线，截止日见标的行。</p>

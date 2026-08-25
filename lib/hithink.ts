@@ -85,6 +85,19 @@ export type StockDailyHistory = {
   item: StockDailyBar[];
 };
 
+export type StockAnomalyAnalysisItem = {
+  stock_name: string;
+  analysis_content: string;
+  keyword_list: string[];
+  thscode: string;
+  tag_name: string;
+};
+
+export type StockAnomalyAnalysis = {
+  timestamp: number;
+  item: StockAnomalyAnalysisItem[];
+};
+
 type FinancialStatementBase = {
   thscode: string;
   ticker: string;
@@ -389,6 +402,34 @@ export async function getStockSnapshots(
   }
 
   return snapshots;
+}
+
+export async function getStockAnomalyAnalysis(
+  thscodes: readonly string[],
+): Promise<StockAnomalyAnalysis> {
+  const params = new URLSearchParams({ thscodes: thscodes.join(",") });
+  const analysis = await hithinkFetch<StockAnomalyAnalysis>(
+    `/api/a-share/special-data/anomaly-analysis-stock?${params}`,
+  );
+
+  if (
+    !Number.isFinite(analysis.timestamp) ||
+    !Array.isArray(analysis.item) ||
+    !analysis.item.every(
+      (item) =>
+        typeof item.thscode === "string" &&
+        item.thscode.trim() !== "" &&
+        typeof item.stock_name === "string" &&
+        typeof item.analysis_content === "string" &&
+        typeof item.tag_name === "string" &&
+        Array.isArray(item.keyword_list) &&
+        item.keyword_list.every((keyword) => typeof keyword === "string"),
+    )
+  ) {
+    throw new HithinkError("股票异动原因响应格式不正确。", "INVALID_STOCK_ANOMALY");
+  }
+
+  return analysis;
 }
 
 export async function getFundMarketSnapshot(
