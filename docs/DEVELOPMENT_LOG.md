@@ -1,5 +1,13 @@
 # Development Log
 
+## 2026-08-25 — V4 Task 2 最小研究频道与一级导航
+
+新增 `/research` 作为纯浏览的共享研究记录频道。它在 Server Component 中直接读取 DuckDB 的 `listResearchNotes()`，按已有创建时间倒序展示全部记录，并按资产类型链接到 A股或 ETF 详情；不重复实现新增、删除、编辑、导入、导出、搜索、过滤、分组或标签。
+
+首页在正常和自选加载失败状态均保留“市场 / 行业”和“研究记录”两个一级入口；市场页在正常和错误状态均保留“返回自选”和“研究记录”。研究频道顶部提供返回自选与市场/行业入口。行业和股票/ETF 深层页未修改，也没有新建导航框架或独立行业频道。
+
+研究频道使用现有 1180px 桌面容器和 560px 以下窄屏容器，导航使用可换行 flex。桌面 1440px 下内容宽度为 1180px，390×844 下宽度为 358px，均无横向溢出。
+
 ## 2026-08-25 — V4 Task 1 DuckDB 服务器共享研究记录
 
 V3 继续冻结。V4 Task 1 将研究记录的唯一事实源从浏览器本地存储切换为 Next.js 单进程服务中的 DuckDB 文件：开发环境使用 `.local/research-notes.dev.duckdb`，生产环境使用 `.local/research-notes.duckdb`。同一部署下，不同浏览器、设备、localhost、局域网和公网入口都通过同一组 `GET /api/research-notes`、`POST /api/research-notes` 与 `DELETE /api/research-notes?id=...` 读取和修改记录。

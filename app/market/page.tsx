@@ -116,9 +116,10 @@ export default async function MarketPage() {
 
     return (
       <main className="market-page">
-        <Link className="back-link" href="/">
-          ← 返回自选
-        </Link>
+        <nav className="channel-nav" aria-label="一级频道导航">
+          <Link className="back-link" href="/">← 返回自选</Link>
+          <Link className="back-link" href="/research">研究记录</Link>
+        </nav>
         <h1>市场研究</h1>
         <p className="subtitle">A 股市场与行业最新概览</p>
         <section className="panel" aria-label="数据状态">
@@ -141,6 +142,6 @@ export default async function MarketPage() {
     );
   } catch (error) {
     const hithinkError = error instanceof HithinkError ? error : new HithinkError("同花顺金融数据服务请求失败。", "UNKNOWN_ERROR");
-    return <main className="market-page"><Link className="back-link" href="/">← 返回自选</Link><h1>市场研究</h1><section className="panel error" role="alert"><h2 className="error-title">数据暂不可用</h2><p className="error-details">{hithinkError.message}{hithinkError.code ? <><br />错误代码：{hithinkError.code}</> : null}{hithinkError.requestId ? <><br />request_id：{hithinkError.requestId}</> : null}</p></section><footer>未使用模拟数据。</footer></main>;
+    return <main className="market-page"><nav className="channel-nav" aria-label="一级频道导航"><Link className="back-link" href="/">← 返回自选</Link><Link className="back-link" href="/research">研究记录</Link></nav><h1>市场研究</h1><section className="panel error" role="alert"><h2 className="error-title">数据暂不可用</h2><p className="error-details">{hithinkError.message}{hithinkError.code ? <><br />错误代码：{hithinkError.code}</> : null}{hithinkError.requestId ? <><br />request_id：{hithinkError.requestId}</> : null}</p></section><footer>未使用模拟数据。</footer></main>;
   }
 }

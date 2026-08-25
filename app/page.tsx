@@ -289,9 +289,10 @@ export default async function Home() {
             <h1>MyInvest</h1>
             <p className="subtitle">我的自选 · 最新行情</p>
           </div>
-          <Link className="market-link" href="/market">
-            市场 / 行业研究 →
-          </Link>
+          <nav className="channel-nav" aria-label="一级频道导航">
+            <Link className="market-link" href="/market">市场 / 行业</Link>
+            <Link className="market-link" href="/research">研究记录</Link>
+          </nav>
         </header>
         <section className="watchlist-summary" aria-label="自选股总体状态">
           <div className="fact"><span className="label">自选标的</span><span className="value">{rows.length} 个</span></div>
@@ -329,6 +330,6 @@ export default async function Home() {
     );
   } catch (error) {
     const watchlistError = error instanceof HithinkError ? error : new HithinkError("自选股看板加载失败。", "UNKNOWN_ERROR");
-    return <main className="watchlist-page"><h1>MyInvest</h1><p className="subtitle">我的自选 · 最新行情</p><section className="panel error" role="alert"><h2 className="error-title">自选股配置暂不可用</h2><p className="error-details">{watchlistError.message}{watchlistError.code ? <><br />错误代码：{watchlistError.code}</> : null}</p></section><footer>未使用模拟数据。</footer></main>;
+    return <main className="watchlist-page"><header className="watchlist-header"><div><h1>MyInvest</h1><p className="subtitle">我的自选 · 最新行情</p></div><nav className="channel-nav" aria-label="一级频道导航"><Link className="market-link" href="/market">市场 / 行业</Link><Link className="market-link" href="/research">研究记录</Link></nav></header><section className="panel error" role="alert"><h2 className="error-title">自选股配置暂不可用</h2><p className="error-details">{watchlistError.message}{watchlistError.code ? <><br />错误代码：{watchlistError.code}</> : null}</p></section><footer>未使用模拟数据。</footer></main>;
   }
 }
